@@ -5,6 +5,7 @@ import { Button } from '../../components/ui/Button';
 import { Field, inputClassName } from '../../components/ui/Field';
 import { PlacePicker } from './PlacePicker';
 import { ConstraintChips } from './ConstraintChips';
+import { createClientId } from '../../lib/client-id';
 import {
   defaultFormValues,
   searchFormSchema,
@@ -37,7 +38,7 @@ export function SearchForm({ onSubmit, submitting }: SearchFormProps): React.JSX
     <form
       noValidate
       onSubmit={form.handleSubmit((values) => {
-        onSubmit(toTravelRequest(values, `req_${crypto.randomUUID()}`));
+        onSubmit(toTravelRequest(values, createClientId('req')));
       })}
       className="flex flex-col"
     >

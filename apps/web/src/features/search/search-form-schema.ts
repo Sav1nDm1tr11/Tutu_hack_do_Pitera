@@ -59,6 +59,12 @@ export const searchFormSchema = z
 
 export type SearchFormValues = z.infer<typeof searchFormSchema>;
 
+function addDays(isoDate: string, days: number): string {
+  const [year, month, day] = isoDate.split('-').map(Number);
+  const date = new Date(Date.UTC(year ?? 0, (month ?? 1) - 1, (day ?? 1) + days));
+  return date.toISOString().slice(0, 10);
+}
+
 /** Веса предпочтений по выбранному приоритету. Пресеты конфигураций считает сервер. */
 const PREFERENCE_WEIGHTS: Record<
   SearchFormValues['preset'],
@@ -107,7 +113,7 @@ export function defaultFormValues(today: string): DefaultValues<SearchFormValues
   return {
     tripType: 'roundTrip',
     departDate: today,
-    returnDate: '',
+    returnDate: addDays(today, 4),
     adults: 1,
     childrenCount: 0,
     childAge: 7,
