@@ -11,6 +11,8 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
+    "@fontsource-variable/manrope": "5.2.8",
+    "@gsap/react": "2.1.2",
     "@hookform/resolvers": "5.9.1",
     "@radix-ui/react-accordion": "1.2.20",
     "@radix-ui/react-dialog": "1.1.23",
@@ -22,9 +24,9 @@
     "@tanstack/react-query": "5.101.4",
     "@tutu-plan-b/domain": "workspace:*",
     "clsx": "2.1.1",
+    "d3-geo": "3.1.1",
+    "gsap": "3.13.0",
     "idb": "8.0.3",
-    "maplibre-gl": "6.4.1",
-    "motion": "13.1.0",
     "react": "19.2.8",
     "react-dom": "19.2.8",
     "react-hook-form": "7.85.0",
@@ -40,6 +42,7 @@
     "@testing-library/jest-dom": "7.0.1",
     "@testing-library/react": "16.3.2",
     "@testing-library/user-event": "14.6.5",
+    "@types/d3-geo": "3.1.0",
     "@types/geojson": "^7946.0.16",
     "@types/react": "19.2.18",
     "@types/react-dom": "19.2.4",

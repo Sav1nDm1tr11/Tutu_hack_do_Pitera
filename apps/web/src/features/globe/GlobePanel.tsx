@@ -1,4 +1,4 @@
-import { Suspense, lazy, useEffect, useMemo, useState } from 'react';
+import { Suspense, lazy, useMemo } from 'react';
 import type { CandidatePool, PlanConfiguration } from '@tutu-plan-b/domain';
 import { buildRouteGeometry } from '@tutu-plan-b/domain';
 import { Button } from '../../components/ui/Button';
@@ -24,48 +24,35 @@ export function GlobePanel({
   onSelectStage,
 }: GlobePanelProps): React.JSX.Element {
   const reducedMotion = usePrefersReducedMotion();
-  const webglAvailable = useWebglAvailable();
 
-  const geometry = useMemo(
-    () => buildRouteGeometry(configuration, pool),
-    [configuration, pool],
-  );
+  const geometry = useMemo(() => buildRouteGeometry(configuration, pool), [configuration, pool]);
 
   // Каждая ветка ниже — не «на всякий случай», а описанный в §15.5 режим: без координат,
   // без WebGL и при недоступном рендере пользователь всё равно должен видеть маршрут.
   if (!geometry.hasCompleteCoordinates || geometry.segments.length === 0) {
     return (
-      <FallbackFrame
-        note="Не для всех этапов известны координаты, поэтому показываем текстовую схему маршрута."
-      >
-        <RouteScheme configuration={configuration} pool={pool} onSelectStage={onSelectStage} />
-      </FallbackFrame>
-    );
-  }
-
-  if (webglAvailable === false) {
-    return (
-      <FallbackFrame note="Ваш браузер не поддерживает WebGL — маршрут показан схемой.">
+      <FallbackFrame note="Не для всех этапов известны координаты, поэтому показываем текстовую схему маршрута.">
         <RouteScheme configuration={configuration} pool={pool} onSelectStage={onSelectStage} />
       </FallbackFrame>
     );
   }
 
   return (
-    <div className="relative size-full overflow-hidden rounded-[24px] bg-[#dfe6fb]">
-      <Suspense fallback={<div className="skeleton size-full" />}>
-        {webglAvailable === true && (
+    <div className="globe-panel relative size-full">
+      <div className="globe-atmosphere" aria-hidden="true" />
+      <div className="globe-map-shell">
+        <Suspense fallback={<div className="skeleton size-full" />}>
           <RouteGlobe
             geometry={geometry}
             selectedStageId={selectedStageId}
             onSelectStage={onSelectStage}
             reducedMotion={reducedMotion}
           />
-        )}
-      </Suspense>
+        </Suspense>
+      </div>
 
       {selectedStageId !== undefined && (
-        <div className="absolute bottom-3 left-3">
+        <div className="globe-reset absolute bottom-3 left-3">
           <Button size="sm" variant="secondary" onClick={() => onSelectStage(undefined)}>
             Весь маршрут
           </Button>
@@ -83,29 +70,9 @@ function FallbackFrame({
   readonly children: React.ReactNode;
 }): React.JSX.Element {
   return (
-    <div className="flex size-full flex-col gap-3 overflow-auto rounded-[24px] border border-line bg-white/70 p-4">
-      <p className="text-sm text-muted">{note}</p>
+    <div className="border-line flex size-full flex-col gap-3 overflow-auto rounded-[24px] border bg-white/70 p-4">
+      <p className="text-muted text-sm">{note}</p>
       {children}
     </div>
   );
-}
-
-/**
- * `undefined` — проверка ещё не выполнена. Три состояния вместо двух нужны, чтобы не
- * мигнуть fallback-схемой до того, как стало известно о поддержке WebGL.
- */
-function useWebglAvailable(): boolean | undefined {
-  const [available, setAvailable] = useState<boolean | undefined>(undefined);
-
-  useEffect(() => {
-    try {
-      const canvas = document.createElement('canvas');
-      const context = canvas.getContext('webgl2') ?? canvas.getContext('webgl');
-      setAvailable(context !== null);
-    } catch {
-      setAvailable(false);
-    }
-  }, []);
-
-  return available;
 }

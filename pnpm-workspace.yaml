@@ -2,6 +2,9 @@ packages:
   - 'apps/*'
   - 'packages/*'
 
-# MapLibre и Vite тянут нативные/сборочные зависимости; разрешаем только их build-скрипты.
-onlyBuiltDependencies:
-  - esbuild
+# Vite требует нативный бинарник esbuild. Другие dependency build-скрипты не разрешаем.
+allowBuilds:
+  esbuild: true
+
+overrides:
+  electron-to-chromium: 1.5.395

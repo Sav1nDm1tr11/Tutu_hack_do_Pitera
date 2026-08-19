@@ -1,0 +1,95 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2026-08-19T21:05:17.0403998+05:00",
+  "title": "Design System: Туту План Б",
+  "extensions": {
+    "colorMeta": {
+      "navigation-navy": { "role": "primary", "displayName": "Navigation Navy", "canonical": "#171255", "tonalRamp": ["#090627", "#171255", "#302982", "#5a53a7", "#8883c5", "#b7b4dd", "#deddf0", "#f4f4fb"] },
+      "decision-violet": { "role": "secondary", "displayName": "Decision Violet", "canonical": "#6d48e5", "tonalRamp": ["#21114f", "#382078", "#5232aa", "#6d48e5", "#9175ec", "#b8a7f3", "#ddd4fa", "#f4f1fe"] },
+      "action-orange": { "role": "tertiary", "displayName": "Action Orange", "canonical": "#c63d21", "tonalRamp": ["#431006", "#6b1b0c", "#962915", "#c63d21", "#df6b51", "#ee9f8b", "#f8d1c7", "#fdf1ee"] },
+      "cool-surface": { "role": "neutral", "displayName": "Cool Surface", "canonical": "#edf6ff", "tonalRamp": ["#122638", "#27445f", "#466780", "#6f8ca4", "#9db4c7", "#c7d9e7", "#e2edf6", "#f6fbff"] }
+    },
+    "typographyMeta": {
+      "display": { "displayName": "Navigation Display", "purpose": "Единственный главный тезис стартового экрана." },
+      "headline": { "displayName": "Route Headline", "purpose": "Направление поездки и крупные заголовки результата." },
+      "body": { "displayName": "Travel Body", "purpose": "Пояснения, факты и длинные русские названия." },
+      "label": { "displayName": "Wayfinding Label", "purpose": "Поля, статусы и компактные метрики." }
+    },
+    "shadows": [
+      { "name": "card-ambient", "value": "0 22px 54px rgb(40 58 107 / 0.13), 0 3px 10px rgb(40 58 107 / 0.06)", "purpose": "Крупные рабочие поверхности." },
+      { "name": "floating-control", "value": "0 18px 42px rgb(43 57 105 / 0.18), 0 4px 12px rgb(43 57 105 / 0.08)", "purpose": "Плавающие действия и панели." },
+      { "name": "focus-halo", "value": "0 0 0 4px rgb(17 103 242 / 0.23)", "purpose": "Клавиатурный фокус." }
+    ],
+    "motion": [
+      { "name": "micro", "value": "160ms", "purpose": "Hover, focus и компактные состояния." },
+      { "name": "card", "value": "320ms", "purpose": "Перестройка карточек и выбранных конфигураций." },
+      { "name": "camera", "value": "640ms", "purpose": "Камерные переходы и возврат маршрута." },
+      { "name": "ease-out", "value": "cubic-bezier(0.16, 1, 0.3, 1)", "purpose": "Основная GSAP и CSS easing-функция." }
+    ],
+    "breakpoints": [
+      { "name": "mobile", "value": "640px" },
+      { "name": "desktop", "value": "1024px" },
+      { "name": "wide", "value": "1240px" }
+    ]
+  },
+  "components": [
+    {
+      "name": "Primary Button",
+      "kind": "button",
+      "refersTo": "button-primary",
+      "description": "Главное действие с доступным контрастом.",
+      "html": "<button class=\"ds-btn-primary\">Собрать устойчивый маршрут</button>",
+      "css": ".ds-btn-primary { min-height: 48px; padding: 12px 16px; border: 0; border-radius: var(--radius-control, 12px); background: var(--color-brand-orange, #c63d21); color: #fff; font: 700 15px/1.2 'Manrope Variable', sans-serif; box-shadow: 0 12px 26px rgb(198 61 33 / .25); transition: background 160ms, transform 160ms; } .ds-btn-primary:hover { background: #a93218; transform: translateY(-1px); } .ds-btn-primary:focus-visible { outline: 2px solid #1167f2; outline-offset: 3px; }"
+    },
+    {
+      "name": "Secondary Button",
+      "kind": "button",
+      "refersTo": "button-secondary",
+      "description": "Спокойное вторичное действие.",
+      "html": "<button class=\"ds-btn-secondary\">Показать на глобусе</button>",
+      "css": ".ds-btn-secondary { min-height: 44px; padding: 10px 14px; border: 1px solid #d9e2f1; border-radius: 12px; background: #fff; color: #171255; font: 700 14px/1.2 'Manrope Variable', sans-serif; transition: background 160ms, border-color 160ms; } .ds-btn-secondary:hover { background: #edf6ff; border-color: #b8c9df; } .ds-btn-secondary:focus-visible { outline: 2px solid #1167f2; outline-offset: 3px; }"
+    },
+    {
+      "name": "Travel Field",
+      "kind": "input",
+      "description": "Поле поисковой консоли с внешней подписью.",
+      "html": "<label class=\"ds-field\"><span>Откуда</span><input value=\"Екатеринбург\" /></label>",
+      "css": ".ds-field { display: grid; gap: 6px; color: #17152f; font: 600 14px/1.3 'Manrope Variable', sans-serif; } .ds-field input { height: 48px; padding: 0 12px; border: 1px solid #d9e2f1; border-radius: 12px; background: #fff; color: #17152f; font: 400 16px/1.4 'Manrope Variable', sans-serif; } .ds-field input:focus-visible { outline: 2px solid #1167f2; outline-offset: 2px; box-shadow: 0 0 0 4px rgb(17 103 242 / .23); }"
+    },
+    {
+      "name": "Status Chip",
+      "kind": "chip",
+      "description": "Дублирует состояние цветом и текстом.",
+      "html": "<span class=\"ds-chip\">✓ Актуально</span>",
+      "css": ".ds-chip { display: inline-flex; align-items: center; min-height: 28px; padding: 4px 10px; border-radius: 999px; background: #e2f7ec; color: #117856; font: 700 12px/1.2 'Manrope Variable', sans-serif; }"
+    },
+    {
+      "name": "Route Card",
+      "kind": "card",
+      "refersTo": "card",
+      "description": "Этап маршрута с фактами, статусом и действиями.",
+      "html": "<article class=\"ds-card\"><strong>Дорога туда</strong><span>Самолёт · без пересадок</span><b>9 950 ₽</b></article>",
+      "css": ".ds-card { display: grid; gap: 10px; padding: 16px; border: 1px solid #d9e2f1; border-radius: 16px; background: #fff; color: #17152f; font: 400 14px/1.4 'Manrope Variable', sans-serif; box-shadow: 0 10px 28px rgb(40 58 107 / .08); } .ds-card strong, .ds-card b { color: #171255; font-weight: 800; } .ds-card:hover { border-color: #b8c9df; } .ds-card:focus-within { outline: 2px solid #1167f2; outline-offset: 3px; }"
+    },
+    {
+      "name": "App Navigation",
+      "kind": "nav",
+      "description": "Компактная липкая шапка с брендом и источником данных.",
+      "html": "<nav class=\"ds-nav\"><strong>Туту <small>ПЛАН Б</small></strong><a href=\"#\">О данных</a></nav>",
+      "css": ".ds-nav { display: flex; align-items: center; justify-content: space-between; min-height: 64px; padding: 0 20px; border-bottom: 1px solid #d9e2f1; background: rgb(255 255 255 / .9); color: #171255; font: 800 18px/1 'Manrope Variable', sans-serif; } .ds-nav small { color: #6d48e5; font-size: 11px; } .ds-nav a { color: #171255; font-size: 14px; text-decoration: none; } .ds-nav a:hover { color: #1167f2; } .ds-nav a:focus-visible { outline: 2px solid #1167f2; outline-offset: 3px; }"
+    }
+  ],
+  "narrative": {
+    "northStar": "Павильон навигации",
+    "overview": "Интерфейс ощущается как светлый современный транспортный павильон: крупные указатели быстро задают направление, прохладные поверхности снижают тревожность, а редкие тёплые сигналы обозначают следующий осмысленный шаг. Центральная планета соединяет эмоциональную метафору путешествия с проверяемой географией.",
+    "keyCharacteristics": ["Крупная навигационная типографика и чёткая визуальная иерархия.", "Холодная светлая среда с тёмно-синим текстом и редкими коралловыми сигналами.", "Реальная география внутри выразительной интерактивной планеты.", "Мягкая глубина и движение только с функциональным смыслом."],
+    "rules": [
+      { "name": "The Signal Rarity Rule", "body": "Коралловый и оранжевый обозначают действие или направление и не конкурируют с содержанием на больших площадях.", "section": "colors" },
+      { "name": "The One Landmark Rule", "body": "На экране только один типографический объект получает масштаб display.", "section": "typography" },
+      { "name": "The Planet Stays Central Rule", "body": "Планета может уменьшаться, но не превращается в декоративную миниатюру.", "section": "layout" },
+      { "name": "The Ambient Depth Rule", "body": "Тень описывает иерархию поверхности и не украшает каждый элемент.", "section": "elevation" }
+    ],
+    "dos": ["Do сохранять планету главным пространственным объектом экрана плана.", "Do использовать реальные координаты и ортографическую проекцию для любой географической метки.", "Do сочетать цвет с текстом, иконкой, толщиной или формой состояния.", "Do отключать анимации при prefers-reduced-motion."],
+    "donts": ["Don't сдвигать города или маршрут вручную ради композиции.", "Don't использовать декоративный коралловый как фон мелкого белого текста.", "Don't превращать продукт в набор одинаковых маркетинговых карточек или тяжёлую GIS-панель.", "Don't использовать цвет как единственный носитель состояния."]
+  }
+}

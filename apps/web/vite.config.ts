@@ -18,8 +18,8 @@ export default defineConfig({
         lang: 'ru-RU',
         start_url: '/',
         display: 'standalone',
-        background_color: '#f7f7ff',
-        theme_color: '#11106b',
+        background_color: '#edf6ff',
+        theme_color: '#171255',
         icons: [
           { src: '/icon-192.png', sizes: '192x192', type: 'image/png' },
           { src: '/icon-512.png', sizes: '512x512', type: 'image/png' },
@@ -61,6 +61,9 @@ export default defineConfig({
       '/api': {
         target: 'http://127.0.0.1:3001',
         changeOrigin: true,
+        // Поток плана живёт десятки секунд: дефолтный таймаут прокси оборвал бы NDJSON.
+        timeout: 120_000,
+        proxyTimeout: 120_000,
       },
     },
   },

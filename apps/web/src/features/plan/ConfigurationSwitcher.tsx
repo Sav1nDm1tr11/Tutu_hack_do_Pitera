@@ -1,5 +1,5 @@
 import type { PlanConfiguration } from '@tutu-plan-b/domain';
-import { formatPrice } from '@tutu-plan-b/domain';
+import { formatDuration, formatPrice } from '@tutu-plan-b/domain';
 import { cn } from '../../lib/cn';
 import { describeLabels } from '../../store/plan-store';
 
@@ -22,7 +22,7 @@ export function ConfigurationSwitcher({
   onChange,
 }: ConfigurationSwitcherProps): React.JSX.Element {
   return (
-    <div role="radiogroup" aria-label="Варианты маршрута" className="flex gap-2 overflow-x-auto pb-1">
+    <div role="radiogroup" aria-label="Варианты маршрута" className="configuration-switcher">
       {configurations.map((configuration) => {
         const active = configuration.id === activeId;
 
@@ -32,20 +32,52 @@ export function ConfigurationSwitcher({
             type="button"
             role="radio"
             aria-checked={active}
+            tabIndex={active ? 0 : -1}
             onClick={() => onChange(configuration.id)}
+            onKeyDown={(event) => {
+              if (!['ArrowDown', 'ArrowUp', 'ArrowLeft', 'ArrowRight'].includes(event.key)) return;
+              event.preventDefault();
+              const direction = event.key === 'ArrowDown' || event.key === 'ArrowRight' ? 1 : -1;
+              const currentIndex = configurations.findIndex((item) => item.id === configuration.id);
+              const next =
+                configurations[
+                  (currentIndex + direction + configurations.length) % configurations.length
+                ];
+              if (next === undefined) return;
+              const group = event.currentTarget.parentElement;
+              onChange(next.id);
+              requestAnimationFrame(() => {
+                group?.querySelector<HTMLElement>(`[data-configuration-id="${next.id}"]`)?.focus();
+              });
+            }}
+            data-configuration-id={configuration.id}
             className={cn(
-              'tap-target flex min-w-[9.5rem] shrink-0 flex-col items-start gap-0.5 rounded-[18px] border px-4 py-2.5 text-left transition-colors',
-              active
-                ? 'border-violet bg-info-soft text-navy'
-                : 'border-line bg-white text-ink hover:bg-surface',
+              'configuration-option tap-target',
+              active ? 'configuration-option--active' : 'configuration-option--idle',
             )}
             style={{ transitionDuration: 'var(--duration-micro)' }}
           >
-            <span className="text-sm font-semibold">{describeLabels(configuration.labels)}</span>
-            <span className="text-sm text-muted tabular">{formatPrice(configuration.totals.price)}</span>
+            <span className="configuration-option__head">
+              <strong>{describeLabels(configuration.labels)}</strong>
+              <svg viewBox="0 0 16 16" className="size-4" fill="none" aria-hidden="true">
+                <circle cx="8" cy="8" r="5.5" stroke="currentColor" strokeWidth="1.5" />
+                {active && <circle cx="8" cy="8" r="2.5" fill="currentColor" />}
+              </svg>
+            </span>
+            <span className="configuration-option__price tabular">
+              {formatPrice(configuration.totals.price)}
+            </span>
+            <span className="configuration-option__meta">
+              <span>{formatDuration(configuration.totals.travelMinutes)}</span>
+              <span>{Math.round(resilience(configuration) * 100)}% устойчивости</span>
+            </span>
           </button>
         );
       })}
     </div>
   );
+}
+
+function resilience(configuration: PlanConfiguration): number {
+  return configuration.score.dimensions.find((item) => item.key === 'resilience')?.score ?? 0;
 }
