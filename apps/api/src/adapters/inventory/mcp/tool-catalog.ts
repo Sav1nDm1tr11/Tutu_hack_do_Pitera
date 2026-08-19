@@ -17,6 +17,21 @@ interface CapabilityMatcher {
   readonly include: readonly string[];
   /** Слова, снимающие совпадение: без них «suburban train» победил бы в категории поездов. */
   readonly exclude: readonly string[];
+  /**
+   * Категория обслуживается поисковым tool'ом. При равном счёте выигрывает имя с `search`:
+   * у справочных и детализирующих tool'ов описание часто повторяет те же слова.
+   */
+  readonly prefersSearchTool: boolean;
+}
+
+/**
+ * Справочники (`*_instructions`) описывают, как пользоваться поиском, и повторяют его
+ * ключевые слова — из-за этого `get_bus_instructions` и `get_hotels_instructions`
+ * выигрывали у `search_bus` и `search_hotels`. Инвентарь они не отдают, поэтому в
+ * кандидаты не попадают вовсе.
+ */
+function isReferenceTool(name: string): boolean {
+  return name.toLowerCase().endsWith('_instructions');
 }
 
 const SEARCH_INTENT = [
@@ -71,31 +86,41 @@ const MATCHERS: readonly CapabilityMatcher[] = [
     capability: 'suburbanTrain',
     include: ['suburban', 'electrichka', 'elektrichka', 'commuter', 'электрич', 'пригород'],
     exclude: [],
+    prefersSearchTool: true,
   },
   {
     capability: 'flight',
     include: ['flight', 'avia', 'air', 'plane', 'авиа', 'самол', 'перелет', 'перелёт'],
     exclude: ['airport transfer', 'аэроэкспресс'],
+    prefersSearchTool: true,
   },
   {
     capability: 'train',
     include: ['train', 'rail', 'поезд', 'жд', 'railway'],
     exclude: ['suburban', 'commuter', 'электрич', 'пригород'],
+    prefersSearchTool: true,
   },
   {
     capability: 'bus',
     include: ['bus', 'coach', 'автобус'],
     exclude: [],
+    prefersSearchTool: true,
   },
   {
+    // «review» здесь не исключается: описание любого поискового tool'а упоминает отзывы,
+    // и запрет снимал совпадение с search_hotels целиком. Отделяет поиск от отзывов
+    // приоритет имени с `search`, а не запретное слово.
     capability: 'hotel',
     include: ['hotel', 'accommodation', 'stay', 'lodging', 'отел', 'гостиниц', 'жиль'],
-    exclude: ['review', 'отзыв'],
+    exclude: [],
+    prefersSearchTool: true,
   },
   {
+    // Отзывы отдаёт детализирующий tool, а не поиск, поэтому приоритета `search` тут нет.
     capability: 'hotelReviews',
     include: ['review', 'отзыв', 'feedback'],
     exclude: [],
+    prefersSearchTool: false,
   },
 ];
 
@@ -114,8 +139,11 @@ export function buildToolCatalog(tools: readonly DiscoveredTool[]): ToolCatalog 
   const allowed: DiscoveredTool[] = [];
   const forbidden: string[] = [];
 
+  const reference: DiscoveredTool[] = [];
+
   for (const tool of tools) {
     if (matchesAny(tool.name, FORBIDDEN_INTENT)) forbidden.push(tool.name);
+    else if (isReferenceTool(tool.name)) reference.push(tool);
     else allowed.push(tool);
   }
 
@@ -130,12 +158,20 @@ export function buildToolCatalog(tools: readonly DiscoveredTool[]): ToolCatalog 
       // одинаковым ответом сервера обязаны дать одинаковый маппинг.
       .sort((left, right) => {
         const diff = scoreTool(right, matcher) - scoreTool(left, matcher);
-        return diff !== 0 ? diff : left.name.localeCompare(right.name);
+        if (diff !== 0) return diff;
+        const byIntent = searchRank(left, matcher) - searchRank(right, matcher);
+        return byIntent !== 0 ? byIntent : left.name.localeCompare(right.name);
       });
 
     const chosen = candidates[0];
     if (chosen === undefined) {
-      reasons.set(matcher.capability, 'Подходящий MCP tool не найден при discovery');
+      const onlyReference = reference.some((tool) => scoreTool(tool, matcher) > 0);
+      reasons.set(
+        matcher.capability,
+        onlyReference
+          ? 'Найден только справочный MCP tool (*_instructions), поиска для категории нет'
+          : 'Подходящий MCP tool не найден при discovery',
+      );
       continue;
     }
 
@@ -146,7 +182,7 @@ export function buildToolCatalog(tools: readonly DiscoveredTool[]): ToolCatalog 
   return {
     bindings,
     reasons,
-    unmatched: allowed
+    unmatched: [...allowed, ...reference]
       .filter((tool) => !used.has(tool.name))
       .map((tool) => tool.name)
       .sort(),
@@ -177,6 +213,12 @@ function scoreTool(tool: DiscoveredTool, matcher: CapabilityMatcher): number {
   if (!matchesAny(haystack, SEARCH_INTENT)) return 0;
 
   return score;
+}
+
+/** 0 — имя выглядит поисковым, 1 — нет. Меньше значит выше в сортировке. */
+function searchRank(tool: DiscoveredTool, matcher: CapabilityMatcher): number {
+  if (!matcher.prefersSearchTool) return 0;
+  return tool.name.toLowerCase().includes('search') ? 0 : 1;
 }
 
 function matchesAny(haystack: string, needles: readonly string[]): boolean {

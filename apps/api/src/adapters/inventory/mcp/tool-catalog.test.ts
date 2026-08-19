@@ -24,9 +24,12 @@ describe('buildToolCatalog', () => {
     expect(catalog.bindings.get('suburbanTrain')?.name).toBe('search_suburban_trains');
     expect(catalog.bindings.get('bus')?.name).toBe('search_buses');
     expect(catalog.bindings.get('hotel')?.name).toBe('search_hotels');
-    expect(catalog.bindings.get('hotelReviews')?.name).toBe('hotel_reviews');
+    // `hotel_reviews` описан как справочник отзывов без поискового намерения, поэтому
+    // категория честно остаётся несопоставленной — с причиной, а не молча.
+    expect(catalog.bindings.get('hotelReviews')).toBeUndefined();
+    expect(catalog.reasons.get('hotelReviews')).toMatch(/не найден/i);
     expect(catalog.forbidden).toEqual(['book_flight']);
-    expect(catalog.unmatched).toEqual(['city_info']);
+    expect(catalog.unmatched).toEqual(['city_info', 'hotel_reviews']);
   });
 
   it('не путает электрички с поездами дальнего следования', () => {
@@ -50,5 +53,42 @@ describe('buildToolCatalog', () => {
     const catalog = buildToolCatalog([tool('flight_status', 'Статус рейса в реальном времени')]);
 
     expect(catalog.bindings.get('flight')).toBeUndefined();
+  });
+
+  it('предпочитает поисковый tool справочнику *_instructions', () => {
+    const catalog = buildToolCatalog([
+      tool('search_bus', 'Search Tutu intercity bus tickets between two cities'),
+      tool('get_bus_instructions', 'Detailed bus playbook: read before working with search_bus'),
+      tool('search_hotels', 'Search Tutu hotel listings, returns rating and guest reviews'),
+      tool('get_hotels_instructions', 'Detailed hotels playbook: search_hotels pitfalls'),
+      tool(
+        'get_offer_details',
+        "Fetch details for a single offer from a search_hotels row: rates, photos, review summary, view='reviews' for a feedback-only card",
+      ),
+    ]);
+
+    expect(catalog.bindings.get('bus')?.name).toBe('search_bus');
+    expect(catalog.bindings.get('hotel')?.name).toBe('search_hotels');
+    expect(catalog.bindings.get('hotelReviews')?.name).toBe('get_offer_details');
+    expect(catalog.unmatched).toContain('get_bus_instructions');
+    expect(catalog.unmatched).toContain('get_hotels_instructions');
+  });
+
+  it('не связывает категорию со справочником, даже если поиска для неё нет', () => {
+    const catalog = buildToolCatalog([
+      tool('get_bus_instructions', 'Detailed bus playbook: search for intercity buses'),
+    ]);
+
+    expect(catalog.bindings.get('bus')).toBeUndefined();
+    expect(catalog.reasons.get('bus')).toMatch(/справочн/i);
+  });
+
+  it('при равном счёте выбирает tool с search в имени', () => {
+    const catalog = buildToolCatalog([
+      tool('aggregate_hotels', 'Список отелей города'),
+      tool('search_hotels', 'Список отелей города'),
+    ]);
+
+    expect(catalog.bindings.get('hotel')?.name).toBe('search_hotels');
   });
 });
