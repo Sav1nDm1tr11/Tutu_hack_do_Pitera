@@ -66,7 +66,14 @@ export default function RouteGlobe({
 
     mapRef.current = map;
 
+    const resize = (): void => {
+      map.resize();
+    };
+    const observer = new ResizeObserver(resize);
+    observer.observe(container);
+
     map.on('load', () => {
+      resize();
       map.addSource(SOURCE_SEGMENTS, { type: 'geojson', data: emptyCollection() });
       map.addSource(SOURCE_MARKERS, { type: 'geojson', data: emptyCollection() });
 
@@ -124,6 +131,7 @@ export default function RouteGlobe({
     });
 
     return (): void => {
+      observer.disconnect();
       map.remove();
       mapRef.current = undefined;
       setReady(false);
@@ -175,8 +183,8 @@ export default function RouteGlobe({
   }, [geometry, selectedStageId, ready, reducedMotion]);
 
   return (
-    <div className="relative size-full">
-      <div ref={containerRef} className="size-full" aria-hidden="true" />
+    <div className="relative h-full w-full">
+      <div ref={containerRef} className="h-full w-full" aria-hidden="true" />
 
       {/* Текстовый эквивалент карты (§19). Скрыт визуально, но доступен скринридеру:
           глобус — усиление, а не единственный источник информации. */}

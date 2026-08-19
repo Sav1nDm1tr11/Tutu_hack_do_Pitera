@@ -38,6 +38,23 @@ describe('mapTransportOffers', () => {
     expect(offer?.seatsAvailable).toBeUndefined();
   });
 
+  it('берёт search_results_url, если checkout_url нет — так отвечают авиа и автобусы MCP', () => {
+    const [offer] = mapTransportOffers(
+      {
+        offers: [
+          {
+            id: 'bus1',
+            mode: 'bus',
+            search_results_url: 'https://www.tutu.ru/bus/search?q=1',
+          },
+        ],
+      },
+      'outbound',
+    );
+
+    expect(offer?.checkoutUrl).toBe('https://www.tutu.ru/bus/search?q=1');
+  });
+
   it('поднимает сегменты из вложенного массива', () => {
     const [offer] = mapTransportOffers(
       {

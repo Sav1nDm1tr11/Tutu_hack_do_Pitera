@@ -79,11 +79,10 @@ export function GlobePanel({
       </div>
 
       {globePending ? (
-        <div className="skeleton m-3.5 min-h-[320px] flex-1 lg:min-h-[520px]" />
+        <div className="skeleton m-3.5 h-[var(--globe-height-mobile)] lg:h-[var(--globe-height-desktop)]" />
       ) : showGlobe ? (
         <div
-          className="relative mt-2 min-h-[320px] flex-1 overflow-hidden bg-[var(--color-ocean)] lg:min-h-[520px]"
-          style={{ contain: 'layout paint' }}
+          className="relative mt-2 h-[var(--globe-height-mobile)] overflow-hidden bg-[var(--color-ocean)] lg:h-[var(--globe-height-desktop)]"
         >
           <Suspense fallback={<div className="skeleton size-full min-h-[320px]" />}>
             <RouteGlobe

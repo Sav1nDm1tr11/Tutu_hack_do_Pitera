@@ -126,7 +126,7 @@ export function PlanView({ plan, offline }: PlanViewProps): React.JSX.Element {
           />
         </aside>
 
-        <section className="order-2 min-h-0 overflow-hidden rounded-2xl border border-line bg-[var(--color-surface)] lg:min-h-[420px]">
+        <section className="order-2 overflow-hidden rounded-2xl border border-line bg-[var(--color-surface)]">
           <GlobePanel
             configuration={configuration}
             pool={plan.candidatePool}

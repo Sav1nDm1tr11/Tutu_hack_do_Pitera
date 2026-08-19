@@ -92,13 +92,14 @@ const PRICE_PER_NIGHT = ['pricepernight', 'pricepernightamount', 'nightlyprice',
 
 const CHECKOUT_URL = [
   'checkouturl',
+  'searchresultsurl',
   'deeplink',
   'deeplinkurl',
   'bookingurl',
+  'tutuurl',
   'url',
   'link',
   'href',
-  'tutuurl',
 ] as const;
 
 export function mapTransportOffers(
