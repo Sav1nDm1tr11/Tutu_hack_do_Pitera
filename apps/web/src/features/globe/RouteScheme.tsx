@@ -29,7 +29,7 @@ export function RouteScheme({
           <li key={stage.id} className="flex items-start gap-3">
             <span
               aria-hidden="true"
-              className="mt-1.5 size-2.5 shrink-0 rounded-full bg-violet"
+              className="mt-1.5 size-2.5 shrink-0 rounded-full bg-[var(--color-primary)]"
             />
             <button
               type="button"

@@ -42,7 +42,7 @@ export const searchFormSchema = z
     maxOneTransfer: z.boolean(),
     extraTransferBuffer: z.boolean(),
     arriveBeforeLocalTime: z.string(),
-    preset: z.enum(['balanced', 'price', 'comfort']),
+    preset: z.enum(['balanced', 'price', 'reliable']),
   })
   .refine((form) => form.origin.id !== form.destination.id, {
     message: 'Города отправления и назначения должны различаться',
@@ -66,7 +66,7 @@ const PREFERENCE_WEIGHTS: Record<
 > = {
   balanced: { price: 0.5, duration: 0.5, resilience: 0.5, comfort: 0.5 },
   price: { price: 0.85, duration: 0.45, resilience: 0.4, comfort: 0.25 },
-  comfort: { price: 0.25, duration: 0.5, resilience: 0.7, comfort: 0.85 },
+  reliable: { price: 0.25, duration: 0.4, resilience: 0.9, comfort: 0.55 },
 };
 
 export function toTravelRequest(form: SearchFormValues, requestId: string): TravelRequest {

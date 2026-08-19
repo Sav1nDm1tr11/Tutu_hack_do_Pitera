@@ -1,6 +1,5 @@
-import type { CandidateOption, CandidatePool } from '@tutu-plan-b/domain';
+import type { CandidateOption, CandidatePool, Money } from '@tutu-plan-b/domain';
 import {
-  FALLBACK_CAVEAT,
   formatDuration,
   formatPrice,
   formatTransfers,
@@ -21,20 +20,12 @@ export interface OptionListSheetProps {
   readonly optionIds: readonly string[];
   readonly pool: CandidatePool;
   readonly selectedOptionId: string | undefined;
+  readonly selectedPrice: Money | undefined;
   readonly busy: boolean;
-  /** Оговорка «Плана Б» (§10.3). Отсутствует для обычного списка альтернатив. */
   readonly caveat?: string | undefined;
   readonly onPick: (optionId: string) => void;
 }
 
-/**
- * Список альтернатив и «План Б» в одном компоненте.
- *
- * Различие между ними — не в устройстве списка, а в обещании: альтернативы можно выбрать
- * прямо сейчас, а «План Б» был доступен на момент поиска и требует проверки перед
- * оформлением. Поэтому оговорка передаётся параметром и показывается до списка, а не
- * прячется под ним.
- */
 export function OptionListSheet({
   open,
   onOpenChange,
@@ -43,6 +34,7 @@ export function OptionListSheet({
   optionIds,
   pool,
   selectedOptionId,
+  selectedPrice,
   busy,
   caveat,
   onPick,
@@ -50,38 +42,44 @@ export function OptionListSheet({
   return (
     <BottomSheet open={open} onOpenChange={onOpenChange} title={title} description={description}>
       {caveat !== undefined && (
-        <p className="mb-3 rounded-[16px] bg-warning-soft px-3 py-2.5 text-sm text-warning">
+        <p className="mb-3 rounded-2xl border-2 border-dashed border-[var(--color-accent-line)] bg-[var(--color-accent-soft)] px-3.5 py-3 text-[12.5px] text-muted">
           {caveat}
         </p>
       )}
 
       {optionIds.length === 0 ? (
-        <p className="text-sm text-muted">
-          Готовых замен в найденном инвентаре нет. Мы не показываем варианты, которых не нашли.
-        </p>
+        <div className="rounded-[14px] border border-line bg-[var(--color-input)] p-4">
+          <p className="m-0 text-[15px] font-extrabold">Запасных вариантов в этот день нет</p>
+          <p className="mt-1.5 text-[12.5px] leading-normal text-muted">
+            Это результат проверки, а не ошибка. Готовых замен в найденном инвентаре нет.
+          </p>
+        </div>
       ) : (
         <ul className="flex flex-col gap-2">
           {optionIds.map((optionId) => {
             const option = pool[optionId];
             if (option === undefined) return null;
-
             const isSelected = optionId === selectedOptionId;
+            const diff = priceDiff(selectedPrice, option.price);
 
             return (
               <li key={optionId}>
                 <div
                   className={cn(
-                    'flex flex-col gap-2 rounded-[18px] border p-3',
-                    isSelected ? 'border-violet bg-info-soft' : 'border-line bg-white',
+                    'flex flex-col gap-2 rounded-[14px] border p-3.5',
+                    isSelected
+                      ? 'border-[var(--color-primary)] bg-[var(--color-accent-soft)]'
+                      : 'border-line bg-[var(--color-input)]',
                   )}
                 >
                   <OptionSummary option={option} />
-
                   <div className="flex items-center justify-between gap-2">
-                    <p className="text-[15px] font-semibold text-ink tabular">
-                      {formatPrice(option.price)}
-                    </p>
-
+                    <div>
+                      <p className="tabular text-base font-extrabold">{formatPrice(option.price)}</p>
+                      {diff !== undefined && (
+                        <p className="mt-px text-[11.5px] text-muted tabular">{diff}</p>
+                      )}
+                    </div>
                     {isSelected ? (
                       <Badge tone="info">Выбрано</Badge>
                     ) : (
@@ -90,7 +88,6 @@ export function OptionListSheet({
                       </Button>
                     )}
                   </div>
-
                   {option.riskSignals.length > 0 && (
                     <ul className="flex flex-wrap gap-1.5">
                       {option.riskSignals.map((signal) => (
@@ -112,11 +109,19 @@ export function OptionListSheet({
   );
 }
 
+function priceDiff(current: Money | undefined, next: Money | undefined): string | undefined {
+  if (current === undefined || next === undefined) return undefined;
+  const delta = next.amount - current.amount;
+  if (delta === 0) return 'та же цена';
+  const formatted = formatPrice({ amount: Math.abs(delta), currency: 'RUB' });
+  return delta > 0 ? `+${formatted}` : `−${formatted}`;
+}
+
 function OptionSummary({ option }: { readonly option: CandidateOption }): React.JSX.Element {
   if (isTransportOption(option)) {
     return (
       <div className="flex flex-col gap-0.5">
-        <p className="text-sm font-medium text-ink tabular">
+        <p className="text-sm font-extrabold tabular">
           {formatWallClockTime(option.departure.at)} — {formatWallClockTime(option.arrival.at)}
         </p>
         <p className="text-xs text-muted">
@@ -126,19 +131,15 @@ function OptionSummary({ option }: { readonly option: CandidateOption }): React.
       </div>
     );
   }
-
   if (isHotelOption(option)) {
     return (
       <div className="flex flex-col gap-0.5">
-        <p className="text-sm font-medium text-ink">{option.name}</p>
+        <p className="text-sm font-extrabold">{option.name}</p>
         <p className="text-xs text-muted">
           {option.nights} ноч. {option.rating === undefined ? '' : `· рейтинг ${option.rating.toFixed(1)}`}
         </p>
       </div>
     );
   }
-
   return <p className="text-sm text-ink">{formatDuration(option.durationMinutes)}</p>;
 }
-
-export { FALLBACK_CAVEAT };

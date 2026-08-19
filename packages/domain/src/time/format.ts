@@ -29,8 +29,11 @@ export function formatDuration(minutes: number | undefined): string {
 
 export function formatPrice(money: Money | undefined): string {
   if (money === undefined) return NO_DATA;
-  const rounded = Math.round(money.amount);
-  const grouped = String(rounded).replace(/\B(?=(\d{3})+(?!\d))/g, '\u00a0');
+  const hasFraction = !Number.isInteger(money.amount);
+  const grouped = money.amount.toLocaleString('ru-RU', {
+    minimumFractionDigits: hasFraction ? 2 : 0,
+    maximumFractionDigits: 2,
+  });
   return `${grouped}\u00a0₽`;
 }
 

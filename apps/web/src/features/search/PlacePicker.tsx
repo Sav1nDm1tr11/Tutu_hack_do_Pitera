@@ -110,7 +110,7 @@ export function PlacePicker({
 
   return (
     <div className="flex flex-col gap-1.5" ref={containerRef}>
-      <label htmlFor={inputId} className="text-sm font-medium text-ink">
+      <label htmlFor={inputId} className="text-xs font-bold text-muted">
         {label}
       </label>
 
@@ -136,9 +136,9 @@ export function PlacePicker({
           }}
           onKeyDown={onKeyDown}
           className={cn(
-            'h-11 w-full rounded-[14px] border bg-white px-3 pr-9 text-[15px] text-ink',
+            'h-11 w-full min-w-0 rounded-[12px] border bg-[var(--color-input)] px-3 pr-9 text-[15px] font-semibold text-ink',
             'placeholder:text-muted/70',
-            error === undefined ? 'border-line' : 'border-danger bg-danger-soft/30',
+            error === undefined ? 'border-line' : 'border-[var(--color-danger-ink)] bg-danger-soft',
           )}
         />
 
@@ -165,7 +165,7 @@ export function PlacePicker({
           role="listbox"
           aria-label={`Подсказки: ${label}`}
           hidden={!open}
-          className="absolute z-30 mt-1 max-h-64 w-full overflow-y-auto rounded-[18px] border border-line bg-card py-1"
+          className="absolute z-30 mt-1 max-h-64 w-full overflow-y-auto rounded-[14px] border border-line bg-[var(--color-surface)] py-1"
           style={{ boxShadow: 'var(--shadow-card)' }}
         >
           {options.map((place, index) => (
@@ -183,7 +183,9 @@ export function PlacePicker({
               onMouseEnter={() => setActiveIndex(index)}
               className={cn(
                 'cursor-pointer px-3 py-2.5 text-[15px]',
-                index === activeIndex ? 'bg-info-soft text-navy' : 'text-ink',
+                index === activeIndex
+                  ? 'bg-[var(--color-accent-soft)] text-[var(--color-accent)]'
+                  : 'text-ink',
               )}
             >
               {place.name}

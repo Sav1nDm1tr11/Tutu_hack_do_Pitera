@@ -9,7 +9,7 @@ export function NotFoundScreen(): React.JSX.Element {
       </p>
       <Link
         to="/"
-        className="tap-target inline-flex w-fit items-center rounded-[14px] bg-navy px-4 font-medium text-white hover:bg-[#1a1889]"
+        className="tap-target inline-flex w-fit items-center rounded-[12px] bg-[var(--color-primary)] px-4 font-bold text-white"
       >
         Перейти к поиску
       </Link>

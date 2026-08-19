@@ -60,7 +60,7 @@ export function OfflineScreen(): React.JSX.Element {
         </>
       )}
 
-      <Link to="/" className="text-sm font-medium text-navy underline underline-offset-4">
+      <Link to="/" className="text-sm font-bold text-[var(--color-accent)] underline underline-offset-4">
         Вернуться к поиску
       </Link>
     </section>

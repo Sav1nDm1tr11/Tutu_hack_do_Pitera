@@ -33,6 +33,9 @@ const SEARCH_INTENT = [
   'найти',
   'расписан',
   'варианты',
+  'review',
+  'reviews',
+  'отзыв',
 ] as const;
 
 /**

@@ -5,7 +5,7 @@ Mobile-first PWA, которая стресс-тестирует план пое
 это приложение заказы не создаёт.
 
 Репозиторий: `Tutu_hack_do_Pitera`. Спека — `docs/SPEC.md`, архитектура —
-`docs/ARCHITECTURE.md`.
+`docs/ARCHITECTURE.md`. Как пользоваться приложением — `docs/USER.md`.
 
 ## Что умеет
 

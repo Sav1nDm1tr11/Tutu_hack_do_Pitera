@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Link, useParams } from 'react-router';
-import type { RoutePlan } from '@tutu-plan-b/domain';
+import { formatWallClockTime, type RoutePlan } from '@tutu-plan-b/domain';
 import { PlanProgress } from '../features/plan/PlanProgress';
 import { PlanView } from '../features/plan/PlanView';
 import { fetchPlan } from '../lib/api-client';
@@ -17,6 +17,7 @@ export function PlanScreen(): React.JSX.Element {
   const progressMessage = usePlanStore((state) => state.progressMessage);
   const plan = usePlanStore((state) => state.plan);
   const fromCache = usePlanStore((state) => state.fromCache);
+  const cachedAt = usePlanStore((state) => state.cachedAt);
   const error = usePlanStore((state) => state.error);
   const restoreCached = usePlanStore((state) => state.restoreCached);
 
@@ -76,7 +77,7 @@ export function PlanScreen(): React.JSX.Element {
           </p>
           <Link
             to="/"
-            className="tap-target inline-flex w-fit items-center rounded-[14px] bg-navy px-4 font-medium text-white hover:bg-[#1a1889]"
+            className="tap-target inline-flex w-fit items-center rounded-[12px] bg-[var(--color-primary)] px-4 font-bold text-white"
           >
             Новый поиск
           </Link>
@@ -89,8 +90,15 @@ export function PlanScreen(): React.JSX.Element {
 
   return (
     <div className="flex flex-col gap-4">
-      {fromCache && (
-        <p className="rounded-[16px] bg-warning-soft px-3 py-2.5 text-sm text-warning">
+      {!online && (
+        <p className="rounded-[14px] bg-warning-soft px-3.5 py-2.5 text-[13px] font-semibold text-warning">
+          Данные сохранены в {formatWallClockTime(cachedAt ?? plan.validAt)}, сеть недоступна.
+          Показан последний собранный план, оформление отключено.
+        </p>
+      )}
+
+      {fromCache && online && (
+        <p className="rounded-[14px] bg-warning-soft px-3.5 py-2.5 text-[13px] font-semibold text-warning">
           Показана сохранённая копия: данные могут быть устаревшими. Оформление отключено до
           обновления.
         </p>

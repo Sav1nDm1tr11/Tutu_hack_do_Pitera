@@ -12,10 +12,10 @@ const PHASE_ORDER: readonly PlanPhase[] = [
 
 const PHASE_TITLES: Record<PlanPhase, string> = {
   planning: 'Разбираем условия',
-  searchingTransport: 'Ищем варианты транспорта',
-  searchingHotels: 'Проверяем отели и отзывы',
+  searchingTransport: 'Ищем варианты дороги',
+  searchingHotels: 'Подбираем проживание',
   normalizing: 'Приводим данные к единому виду',
-  scoring: 'Сравниваем варианты',
+  scoring: 'Сравниваем',
   buildingFallback: 'Готовим план Б',
   explaining: 'Формулируем объяснения',
 };
@@ -25,56 +25,56 @@ export interface PlanProgressProps {
   readonly message: string | undefined;
 }
 
-/**
- * Экран прогресса (§13.1).
- *
- * Показывает названные фазы, а не безликий спиннер: сборка плана занимает секунды, и
- * пользователю важно видеть, что происходит именно сейчас, иначе ожидание читается как
- * зависание. Пройденные фазы остаются на экране — это и есть доказательство движения.
- */
 export function PlanProgress({ phase, message }: PlanProgressProps): React.JSX.Element {
   const currentIndex = phase === undefined ? 0 : PHASE_ORDER.indexOf(phase);
+  const ratio = PHASE_ORDER.length === 0 ? 0 : Math.round((currentIndex / PHASE_ORDER.length) * 100);
 
   return (
-    <section className="card-surface mx-auto flex w-full max-w-xl flex-col gap-4 p-6">
-      <div className="flex flex-col gap-1">
-        <h2 className="text-lg font-semibold text-ink">Собираем маршрут</h2>
-        <p className="text-sm text-muted">{message ?? 'Начинаем поиск'}</p>
+    <section className="card-surface mx-auto flex w-full max-w-[640px] flex-col p-[22px]">
+      <h2 className="m-0 text-2xl font-extrabold tracking-[-0.03em]">Собираем маршрут</h2>
+      <p className="m-0 mt-1 text-[13.5px] text-muted">{message ?? 'Начинаем поиск'}</p>
+
+      <div className="my-[18px] h-1.5 overflow-hidden rounded-full bg-[var(--color-track)]">
+        <div
+          className="h-full rounded-full bg-[var(--color-primary)]"
+          style={{ width: `${String(ratio)}%`, transition: 'width .4s ease' }}
+        />
       </div>
 
-      <ol className="flex flex-col gap-2">
+      <ol className="m-0 flex list-none flex-col gap-[11px] p-0">
         {PHASE_ORDER.map((item, index) => {
           const done = index < currentIndex;
           const active = index === currentIndex;
 
           return (
-            <li key={item} className="flex items-center gap-3">
+            <li key={item} className="flex items-center gap-[11px]">
               <span
                 aria-hidden="true"
                 className={
                   done
-                    ? 'grid size-5 shrink-0 place-items-center rounded-full bg-success text-white'
+                    ? 'grid size-5 shrink-0 place-items-center rounded-full bg-[var(--color-grade-a)] text-white'
                     : active
-                      ? 'size-5 shrink-0 rounded-full border-2 border-violet bg-info-soft'
+                      ? 'size-5 shrink-0 rounded-full border-2 border-[var(--color-primary)] bg-[var(--color-accent-soft)]'
                       : 'size-5 shrink-0 rounded-full border-2 border-line'
                 }
               >
                 {done && (
-                  <svg viewBox="0 0 16 16" className="size-3" fill="none">
+                  <svg viewBox="0 0 16 16" className="size-[11px]" fill="none">
                     <path
                       d="M3.5 8.5l3 3 6-7"
                       stroke="currentColor"
-                      strokeWidth="2.2"
+                      strokeWidth="2.4"
                       strokeLinecap="round"
                       strokeLinejoin="round"
                     />
                   </svg>
                 )}
               </span>
-
               <span
                 className={
-                  active ? 'text-[15px] font-medium text-ink' : 'text-[15px] text-muted'
+                  active || done
+                    ? 'text-sm font-bold text-ink'
+                    : 'text-sm font-medium text-muted'
                 }
               >
                 {PHASE_TITLES[item]}
@@ -84,8 +84,11 @@ export function PlanProgress({ phase, message }: PlanProgressProps): React.JSX.E
         })}
       </ol>
 
-      {/* Прогресс дублируется для скринридера одним сообщением: озвучивать каждый пункт
-          списка заново на каждой фазе значило бы забивать канал шумом (§19). */}
+      <div className="mt-5 flex flex-col gap-2">
+        <div className="skeleton h-[52px]" />
+        <div className="skeleton h-[52px]" style={{ animationDelay: '0.2s' }} />
+      </div>
+
       <p aria-live="polite" className="visually-hidden">
         {message ?? ''}
       </p>

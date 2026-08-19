@@ -9,12 +9,12 @@ const TONE: Record<FreshnessState, BadgeTone> = {
   offline: 'danger',
 };
 
-const LABEL: Record<FreshnessState, string> = {
-  fresh: 'Актуально',
-  aging: 'Стоит обновить',
-  stale: 'Данные могут быть устаревшими',
-  offline: 'Оффлайн-копия',
-};
+function freshnessLabel(state: FreshnessState, fetchedAt: string): string {
+  if (state === 'fresh') return `Свежая · ${formatWallClockTime(fetchedAt)}`;
+  if (state === 'aging') return 'Устаревает';
+  if (state === 'stale') return 'Устарела';
+  return 'Офлайн';
+}
 
 export interface FreshnessBadgeProps {
   readonly fetchedAt: string;
@@ -40,7 +40,7 @@ export function FreshnessBadge({
 
   return (
     <Badge tone={TONE[state]} icon={<ClockIcon />} title={`Данные получены в ${formatWallClockTime(fetchedAt)}`}>
-      {LABEL[state]}
+      {freshnessLabel(state, fetchedAt)}
     </Badge>
   );
 }

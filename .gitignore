@@ -25,5 +25,6 @@ pnpm-debug.log*
 
 # Локальные артефакты разработки
 tmp/
+.tmp-design/
 .vite/
 dev-dist/

@@ -1,7 +1,8 @@
 import type { PlanConfiguration } from '@tutu-plan-b/domain';
-import { formatPrice } from '@tutu-plan-b/domain';
+import { formatDuration, formatPrice, formatTransfers } from '@tutu-plan-b/domain';
 import { cn } from '../../lib/cn';
 import { describeLabels } from '../../store/plan-store';
+import { reliabilityGrade } from '../../lib/reliability';
 
 export interface ConfigurationSwitcherProps {
   readonly configurations: readonly PlanConfiguration[];
@@ -9,22 +10,20 @@ export interface ConfigurationSwitcherProps {
   readonly onChange: (configurationId: string) => void;
 }
 
-/**
- * Переключатель конфигураций (§6.3).
- *
- * Реализован как `radiogroup`, а не как таб-бар: выбор конфигурации — это выбор одного
- * значения из набора, а не навигация между независимыми панелями. Стрелки на клавиатуре
- * при этом работают ожидаемо для пользователя скринридера.
- */
 export function ConfigurationSwitcher({
   configurations,
   activeId,
   onChange,
 }: ConfigurationSwitcherProps): React.JSX.Element {
   return (
-    <div role="radiogroup" aria-label="Варианты маршрута" className="flex gap-2 overflow-x-auto pb-1">
+    <div
+      role="radiogroup"
+      aria-label="Варианты маршрута"
+      className="flex gap-2.5 overflow-x-auto pb-1 lg:flex-col lg:overflow-visible"
+    >
       {configurations.map((configuration) => {
         const active = configuration.id === activeId;
+        const grade = reliabilityGrade(configuration.score.total);
 
         return (
           <button
@@ -34,15 +33,36 @@ export function ConfigurationSwitcher({
             aria-checked={active}
             onClick={() => onChange(configuration.id)}
             className={cn(
-              'tap-target flex min-w-[9.5rem] shrink-0 flex-col items-start gap-0.5 rounded-[18px] border px-4 py-2.5 text-left transition-colors',
+              'flex min-w-[180px] shrink-0 flex-col items-stretch gap-1 rounded-[14px] border p-3 text-left lg:min-w-0 lg:w-full',
               active
-                ? 'border-violet bg-info-soft text-navy'
-                : 'border-line bg-white text-ink hover:bg-surface',
+                ? 'border-[var(--color-primary)] bg-[var(--color-primary)] text-white shadow-[var(--shadow-cta)]'
+                : 'border-line bg-[var(--color-surface)] text-ink',
             )}
-            style={{ transitionDuration: 'var(--duration-micro)' }}
           >
-            <span className="text-sm font-semibold">{describeLabels(configuration.labels)}</span>
-            <span className="text-sm text-muted tabular">{formatPrice(configuration.totals.price)}</span>
+            <span className="flex items-center justify-between gap-2">
+              <strong className="text-[13.5px] font-extrabold">
+                {describeLabels(configuration.labels)}
+              </strong>
+              <span
+                className="grade-badge size-[22px] text-[11px]"
+                style={{ background: grade.color }}
+              >
+                {grade.letter}
+              </span>
+            </span>
+            <span className="tabular text-xl font-extrabold tracking-[-0.03em]">
+              {formatPrice(configuration.totals.price)}
+            </span>
+            <span
+              className={cn(
+                'flex flex-wrap gap-x-2 gap-y-0.5 text-[11.5px] tabular',
+                active ? 'opacity-75' : 'text-muted',
+              )}
+            >
+              <span>{formatDuration(configuration.totals.travelMinutes)}</span>
+              <span>{formatTransfers(configuration.totals.transferCount)}</span>
+              <span>{Math.round(configuration.score.total)}% надёжности</span>
+            </span>
           </button>
         );
       })}

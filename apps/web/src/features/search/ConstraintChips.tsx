@@ -17,34 +17,29 @@ const TOGGLES: readonly { name: BooleanConstraint; label: string; hint: string }
   },
   {
     name: 'extraTransferBuffer',
-    label: 'Больше времени на пересадку',
+    label: 'Запас на пересадку',
     hint: 'Увеличенный минимальный буфер между сегментами',
   },
 ];
 
 const PRESETS: readonly { value: SearchFormValues['preset']; label: string }[] = [
-  { value: 'balanced', label: 'Сбалансированно' },
-  { value: 'price', label: 'Приоритет низкой цены' },
-  { value: 'comfort', label: 'Приоритет комфорта' },
+  { value: 'price', label: 'Дешевле' },
+  { value: 'balanced', label: 'Баланс' },
+  { value: 'reliable', label: 'Надёжнее' },
 ];
 
-/**
- * Чипы ограничений и приоритета (§6.2).
- *
- * Реализованы как настоящие checkbox и radio, а не как `div` с обработчиком клика:
- * состояние «включено» должно читаться скринридером и переключаться с клавиатуры без
- * дополнительного кода (§19). Визуальная форма чипа — только оформление.
- */
 export function ConstraintChips({
   form,
 }: {
   readonly form: UseFormReturn<SearchFormValues, unknown, SearchFormValues>;
 }): React.JSX.Element {
+  const preset = form.watch('preset');
+
   return (
     <div className="flex flex-col gap-4">
       <fieldset>
-        <legend className="mb-2 text-sm font-medium text-ink">Жёсткие ограничения</legend>
-        <div className="flex flex-wrap gap-2">
+        <legend className="mb-2 text-xs font-bold text-muted">Ограничения</legend>
+        <div className="flex flex-wrap gap-1.5">
           {TOGGLES.map((toggle) => (
             <label key={toggle.name} title={toggle.hint} className={chipClassName}>
               <input type="checkbox" {...form.register(toggle.name)} className="sr-only" />
@@ -56,20 +51,28 @@ export function ConstraintChips({
       </fieldset>
 
       <fieldset>
-        <legend className="mb-2 text-sm font-medium text-ink">Что важнее</legend>
-        <div className="flex flex-wrap gap-2">
-          {PRESETS.map((preset) => (
-            <label key={preset.value} className={chipClassName}>
-              <input
-                type="radio"
-                value={preset.value}
-                {...form.register('preset')}
-                className="sr-only"
-              />
-              <CheckMark />
-              {preset.label}
-            </label>
-          ))}
+        <legend className="mb-2 text-xs font-bold text-muted">Что важнее</legend>
+        <div className="priority-track" role="radiogroup" aria-label="Приоритет поиска">
+          {PRESETS.map((item) => {
+            const active = preset === item.value;
+            return (
+              <label
+                key={item.value}
+                className={cn(
+                  'flex min-h-[42px] flex-1 cursor-pointer items-center justify-center rounded-[11px] text-[13.5px]',
+                  active ? 'bg-[var(--color-surface)] font-extrabold text-[var(--color-accent)] shadow-[0_2px_8px_rgba(76,29,149,.14)]' : 'font-semibold text-muted',
+                )}
+              >
+                <input
+                  type="radio"
+                  value={item.value}
+                  {...form.register('preset')}
+                  className="sr-only"
+                />
+                {item.label}
+              </label>
+            );
+          })}
         </div>
       </fieldset>
     </div>
@@ -77,24 +80,23 @@ export function ConstraintChips({
 }
 
 const chipClassName = cn(
-  'inline-flex min-h-11 cursor-pointer items-center gap-2 rounded-full border border-line bg-white px-3.5 text-sm text-ink',
-  'has-checked:border-violet has-checked:bg-info-soft has-checked:font-medium has-checked:text-navy',
-  'has-focus-visible:outline-2 has-focus-visible:outline-offset-2 has-focus-visible:outline-violet',
+  'inline-flex min-h-10 cursor-pointer items-center gap-1.5 rounded-full border px-3.5 text-[12.5px] text-ink',
+  'border-line bg-transparent font-medium',
+  'has-checked:border-[var(--color-primary)] has-checked:bg-[var(--color-accent-soft)] has-checked:font-bold has-checked:text-[var(--color-accent)]',
 );
 
-/** Галочка появляется только у выбранного чипа: цвет не единственный признак (§19). */
 function CheckMark(): React.JSX.Element {
   return (
     <svg
       viewBox="0 0 16 16"
-      className="hidden size-3.5 shrink-0 text-violet peer-checked:block in-has-checked:block"
+      className="hidden size-3 shrink-0 text-[var(--color-accent)] in-has-checked:block"
       fill="none"
       aria-hidden="true"
     >
       <path
         d="M3 8.5l3.2 3.2L13 4.8"
         stroke="currentColor"
-        strokeWidth="2.2"
+        strokeWidth="2.4"
         strokeLinecap="round"
         strokeLinejoin="round"
       />

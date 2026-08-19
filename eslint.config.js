@@ -34,6 +34,7 @@ export default tseslint.config(
       '**/playwright-report/**',
       '**/test-results/**',
       '**/*.snapshot.json',
+      '.tmp-design/**',
     ],
   },
 

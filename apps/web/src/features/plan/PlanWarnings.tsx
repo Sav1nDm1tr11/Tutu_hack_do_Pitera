@@ -2,7 +2,7 @@ import type { PlanWarning } from '@tutu-plan-b/domain';
 import { cn } from '../../lib/cn';
 
 const SEVERITY_STYLES: Record<PlanWarning['severity'], string> = {
-  info: 'bg-info-soft text-navy',
+  info: 'bg-[var(--color-accent-soft)] text-[var(--color-accent)]',
   warning: 'bg-warning-soft text-warning',
   critical: 'bg-danger-soft text-danger',
 };

@@ -132,7 +132,7 @@ export function AboutDataScreen(): React.JSX.Element {
         </div>
       </section>
 
-      <Link to="/" className="text-sm font-medium text-navy underline underline-offset-4">
+      <Link to="/" className="text-sm font-bold text-[var(--color-accent)] underline underline-offset-4">
         Вернуться к поиску
       </Link>
     </article>
@@ -142,7 +142,7 @@ export function AboutDataScreen(): React.JSX.Element {
 function Item({ children }: { readonly children: React.ReactNode }): React.JSX.Element {
   return (
     <li className="flex items-start gap-2">
-      <span aria-hidden="true" className="mt-1.5 size-1.5 shrink-0 rounded-full bg-violet" />
+      <span aria-hidden="true" className="mt-1.5 size-1.5 shrink-0 rounded-full bg-[var(--color-accent)]" />
       <span>{children}</span>
     </li>
   );

@@ -7,8 +7,8 @@ import type {
   TransportQuery,
   TravelInventoryGateway,
 } from '@tutu-plan-b/domain';
-import { FixtureInventoryGateway } from '../fixture-gateway';
-import { LiveMcpInventoryGateway } from './live-gateway';
+import type { FixtureInventoryGateway } from '../fixture-gateway';
+import type { LiveMcpInventoryGateway } from './live-gateway';
 
 export interface AutoInventoryGatewayOptions {
   readonly live: LiveMcpInventoryGateway;

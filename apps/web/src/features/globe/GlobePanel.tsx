@@ -4,10 +4,8 @@ import { buildRouteGeometry } from '@tutu-plan-b/domain';
 import { Button } from '../../components/ui/Button';
 import { usePrefersReducedMotion } from '../../lib/use-prefers-reduced-motion';
 import { RouteScheme } from './RouteScheme';
+import { cn } from '../../lib/cn';
 
-// Глобус загружается отдельным чанком после интерактивности shell (§18.2): MapLibre
-// весит больше всего остального приложения, и держать его в критическом пути значило бы
-// проиграть LCP ради украшения.
 const RouteGlobe = lazy(async () => import('./RouteGlobe'));
 
 export interface GlobePanelProps {
@@ -25,75 +23,103 @@ export function GlobePanel({
 }: GlobePanelProps): React.JSX.Element {
   const reducedMotion = usePrefersReducedMotion();
   const webglAvailable = useWebglAvailable();
+  const [mode, setMode] = useState<'globe' | 'scheme'>('globe');
 
   const geometry = useMemo(
     () => buildRouteGeometry(configuration, pool),
     [configuration, pool],
   );
 
-  // Каждая ветка ниже — не «на всякий случай», а описанный в §15.5 режим: без координат,
-  // без WebGL и при недоступном рендере пользователь всё равно должен видеть маршрут.
-  if (!geometry.hasCompleteCoordinates || geometry.segments.length === 0) {
-    return (
-      <FallbackFrame
-        note="Не для всех этапов известны координаты, поэтому показываем текстовую схему маршрута."
-      >
-        <RouteScheme configuration={configuration} pool={pool} onSelectStage={onSelectStage} />
-      </FallbackFrame>
-    );
-  }
+  const forceScheme =
+    !geometry.hasCompleteCoordinates ||
+    geometry.segments.length === 0 ||
+    webglAvailable === false ||
+    reducedMotion;
 
-  if (webglAvailable === false) {
-    return (
-      <FallbackFrame note="Ваш браузер не поддерживает WebGL — маршрут показан схемой.">
-        <RouteScheme configuration={configuration} pool={pool} onSelectStage={onSelectStage} />
-      </FallbackFrame>
-    );
-  }
+  const showGlobe = mode === 'globe' && !forceScheme && webglAvailable === true;
+  const globePending = mode === 'globe' && !forceScheme && webglAvailable === undefined;
 
   return (
-    <div className="relative size-full overflow-hidden rounded-[24px] bg-[#dfe6fb]">
-      <Suspense fallback={<div className="skeleton size-full" />}>
-        {webglAvailable === true && (
-          <RouteGlobe
-            geometry={geometry}
-            selectedStageId={selectedStageId}
-            onSelectStage={onSelectStage}
-            reducedMotion={reducedMotion}
-          />
-        )}
-      </Suspense>
+    <div className="flex h-full flex-col">
+      <div className="flex items-center justify-between gap-2 px-3.5 pt-3">
+        <div>
+          <p className="m-0 text-[13px] font-extrabold">Схема маршрута</p>
+          <p className="mt-0.5 text-[11.5px] text-muted">
+            {showGlobe
+              ? 'Потяните, чтобы сдвинуть · колесо для масштаба'
+              : 'Текстовая схема — географически точная альтернатива глобусу'}
+          </p>
+        </div>
+        <div className="flex gap-1 rounded-[10px] bg-[var(--color-track)] p-0.5">
+          {(
+            [
+              { key: 'globe', label: 'Глобус' },
+              { key: 'scheme', label: 'Схема' },
+            ] as const
+          ).map((item) => {
+            const active = (forceScheme ? 'scheme' : mode) === item.key;
+            return (
+              <button
+                key={item.key}
+                type="button"
+                disabled={item.key === 'globe' && forceScheme}
+                onClick={() => setMode(item.key)}
+                className={cn(
+                  'min-h-[30px] rounded-lg px-2.5 text-[11.5px] font-bold',
+                  active
+                    ? 'bg-[var(--color-surface)] text-[var(--color-accent)] shadow-[0_2px_6px_rgba(76,29,149,.14)]'
+                    : 'text-muted',
+                )}
+              >
+                {item.label}
+              </button>
+            );
+          })}
+        </div>
+      </div>
 
-      {selectedStageId !== undefined && (
-        <div className="absolute bottom-3 left-3">
-          <Button size="sm" variant="secondary" onClick={() => onSelectStage(undefined)}>
-            Весь маршрут
-          </Button>
+      {globePending ? (
+        <div className="skeleton m-3.5 min-h-[320px] flex-1 lg:min-h-[520px]" />
+      ) : showGlobe ? (
+        <div
+          className="relative mt-2 min-h-[320px] flex-1 overflow-hidden bg-[var(--color-ocean)] lg:min-h-[520px]"
+          style={{ contain: 'layout paint' }}
+        >
+          <Suspense fallback={<div className="skeleton size-full min-h-[320px]" />}>
+            <RouteGlobe
+              geometry={geometry}
+              selectedStageId={selectedStageId}
+              onSelectStage={onSelectStage}
+              reducedMotion={reducedMotion}
+            />
+          </Suspense>
+          {selectedStageId !== undefined && (
+            <div className="absolute bottom-3 left-3">
+              <Button size="sm" variant="secondary" onClick={() => onSelectStage(undefined)}>
+                Весь маршрут
+              </Button>
+            </div>
+          )}
+        </div>
+      ) : (
+        <div className="p-3.5">
+          {forceScheme && webglAvailable === false && (
+            <p className="mb-3 text-sm text-muted">
+              Ваш браузер не поддерживает WebGL — маршрут показан схемой.
+            </p>
+          )}
+          {forceScheme && !geometry.hasCompleteCoordinates && (
+            <p className="mb-3 text-sm text-muted">
+              Не для всех этапов известны координаты, поэтому показываем текстовую схему маршрута.
+            </p>
+          )}
+          <RouteScheme configuration={configuration} pool={pool} onSelectStage={onSelectStage} />
         </div>
       )}
     </div>
   );
 }
 
-function FallbackFrame({
-  note,
-  children,
-}: {
-  readonly note: string;
-  readonly children: React.ReactNode;
-}): React.JSX.Element {
-  return (
-    <div className="flex size-full flex-col gap-3 overflow-auto rounded-[24px] border border-line bg-white/70 p-4">
-      <p className="text-sm text-muted">{note}</p>
-      {children}
-    </div>
-  );
-}
-
-/**
- * `undefined` — проверка ещё не выполнена. Три состояния вместо двух нужны, чтобы не
- * мигнуть fallback-схемой до того, как стало известно о поддержке WebGL.
- */
 function useWebglAvailable(): boolean | undefined {
   const [available, setAvailable] = useState<boolean | undefined>(undefined);
 

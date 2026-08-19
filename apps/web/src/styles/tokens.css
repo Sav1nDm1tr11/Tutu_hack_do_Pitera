@@ -1,56 +1,95 @@
 /**
- * Токены оформления (§6.6).
- *
- * Палитра — черновая и подлежит проверке по материалам хакатона перед финальной
- * полировкой. Важнее другое правило, зашитое в структуру токенов: цвет никогда не
- * единственный носитель смысла (§19), поэтому у каждого статусного цвета есть парный
- * `-soft` для фона и рядом всегда стоят текст и иконка.
+ * Токены из дизайн-системы «План Б».
+ * Шкала надёжности живёт отдельно от primary: фиолетовый — выбор и действие,
+ * A–D — только балл. Цвет никогда не единственный носитель смысла (§19).
  */
+:root,
+[data-theme='light'] {
+  --color-bg: #f5f3ff;
+  --color-surface: #ffffff;
+  --color-header: rgb(255 255 255 / 0.88);
+  --color-input: #fbfaff;
+  --color-ink: #1a1523;
+  --color-muted: #6b6480;
+  --color-line: #e4ddfb;
+  --color-track: #ede7fd;
+  --color-primary: #6d28d9;
+  --color-primary-hover: #5b21b6;
+  --color-primary-active: #4c1d95;
+  --color-accent: #6d28d9;
+  --color-accent-soft: #f0ebfe;
+  --color-accent-line: #ddd1fa;
+  --color-warn-soft: #fef6e7;
+  --color-warn-ink: #92610a;
+  --color-danger-soft: #feecec;
+  --color-danger-ink: #b42318;
+  --color-danger-line: #f7c9c9;
+  --color-ok-soft: #e7f7f0;
+  --color-ok-ink: #0a7355;
+  --color-ocean: #ede9fe;
+  --color-land: #ddd6fe;
+  --color-land-stroke: #c4b5fd;
+  --shadow-card: 0 18px 44px rgb(76 29 149 / 0.08);
+  --shadow-sheet: 0 -12px 48px rgb(20 16 31 / 0.4);
+  --shadow-focus: 0 0 0 4px rgb(109 40 217 / 0.18);
+  --shadow-cta: 0 12px 26px rgb(109 40 217 / 0.26);
+}
+
+[data-theme='dark'] {
+  --color-bg: #14101f;
+  --color-surface: #1e1830;
+  --color-header: rgb(30 24 48 / 0.9);
+  --color-input: #241c3c;
+  --color-ink: #ede9fe;
+  --color-muted: #9c93b5;
+  --color-line: #33294f;
+  --color-track: #2c2246;
+  --color-primary: #8b5cf6;
+  --color-primary-hover: #7c4dee;
+  --color-primary-active: #6d28d9;
+  --color-accent: #a78bfa;
+  --color-accent-soft: #271f41;
+  --color-accent-line: #3e3266;
+  --color-warn-soft: #33280f;
+  --color-warn-ink: #f5c463;
+  --color-danger-soft: #3a1a1c;
+  --color-danger-ink: #f79a93;
+  --color-danger-line: #5a2a2c;
+  --color-ok-soft: #12312a;
+  --color-ok-ink: #5fd3ac;
+  --color-ocean: #241c3c;
+  --color-land: #3b2f63;
+  --color-land-stroke: #57457f;
+  --shadow-card: 0 20px 50px rgb(0 0 0 / 0.4);
+  --shadow-sheet: 0 -12px 48px rgb(20 16 31 / 0.55);
+  --shadow-focus: 0 0 0 4px rgb(139 92 246 / 0.28);
+  --shadow-cta: 0 12px 26px rgb(109 40 217 / 0.4);
+}
+
 :root {
-  --color-brand-navy: #11106b;
-  --color-brand-violet: #7868ee;
-  --color-brand-orange: #ed6436;
+  --color-grade-a: #10b981;
+  --color-grade-b: #84cc16;
+  --color-grade-c: #f59e0b;
+  --color-grade-d: #ef4444;
 
-  --color-surface: #f7f7ff;
-  --color-card: #ffffff;
-  --color-text: #15133f;
-  --color-muted: #686783;
-  --color-border: #e3e2f2;
-
-  --color-success: #197a55;
-  --color-success-soft: #e6f4ee;
-  --color-warning: #c06a00;
-  --color-warning-soft: #fdf1e0;
-  --color-danger: #c33b4a;
-  --color-danger-soft: #fdecee;
-  --color-info-soft: #eeecff;
-
-  --radius-card: 24px;
-  --radius-control: 14px;
+  --radius-card: 16px;
+  --radius-control: 12px;
   --radius-pill: 999px;
 
-  --shadow-card: 0 18px 50px rgb(17 16 107 / 0.12);
-  --shadow-sheet: 0 -12px 40px rgb(17 16 107 / 0.18);
-  --shadow-focus: 0 0 0 3px rgb(120 104 238 / 0.35);
-
-  /* Длительности анимаций из §6.7. Держим их токенами, чтобы reduced-motion мог
-     обнулить всё разом, а не по компонентам. */
-  --duration-micro: 150ms;
-  --duration-card: 260ms;
+  --duration-micro: 160ms;
+  --duration-card: 280ms;
   --duration-camera: 640ms;
   --ease-out: cubic-bezier(0.22, 0.61, 0.36, 1);
 
-  /* Геометрия глобуса на мобильном (§6.3): высота в пределах 220–280 px. */
-  --globe-height-mobile: 248px;
+  --globe-height-mobile: 320px;
+  --globe-height-desktop: 520px;
 
-  --font-sans:
-    'Inter', 'Segoe UI', system-ui, -apple-system, 'Helvetica Neue', Arial, sans-serif;
-  --font-numeric: 'Inter', 'Segoe UI', system-ui, sans-serif;
+  --font-sans: 'Manrope', system-ui, sans-serif;
+  --font-numeric: 'Manrope', system-ui, sans-serif;
 }
 
 @media (prefers-reduced-motion: reduce) {
   :root {
-    /* §19 требует именно отключения движения, а не его ускорения. */
     --duration-micro: 0ms;
     --duration-card: 0ms;
     --duration-camera: 0ms;

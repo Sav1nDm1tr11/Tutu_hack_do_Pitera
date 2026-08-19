@@ -5,7 +5,6 @@ import type {
   FreshnessState,
   HotelOption,
   ItineraryStage,
-  RiskSignal,
   TransportOption,
 } from '@tutu-plan-b/domain';
 import {
@@ -20,22 +19,17 @@ import {
   isTransportOption,
   pluralizeRu,
 } from '@tutu-plan-b/domain';
-import { Badge, type BadgeTone } from '../../components/ui/Badge';
+import { Badge } from '../../components/ui/Badge';
 import { Button } from '../../components/ui/Button';
 import { cn } from '../../lib/cn';
 import { FreshnessBadge } from './FreshnessBadge';
+import { TransportIcon, type TransportIconMode } from '../../components/brand/TransportIcon';
 
 const MODE_LABELS: Record<TransportOption['mode'], string> = {
   flight: 'Самолёт',
   train: 'Поезд',
   bus: 'Автобус',
   suburbanTrain: 'Электричка',
-};
-
-const RISK_TONE: Record<RiskSignal['severity'], BadgeTone> = {
-  info: 'neutral',
-  warning: 'warning',
-  critical: 'danger',
 };
 
 export interface StageCardProps {
@@ -52,14 +46,6 @@ export interface StageCardProps {
   readonly onOpenFallback: () => void;
 }
 
-/**
- * Карточка этапа маршрута (§6.5).
- *
- * Порядок полей задан спецификацией и не переставляется по вкусу: пользователь
- * сравнивает варианты глазами, и стабильное расположение цены и времени важнее
- * компактности. Отсутствующие поля не показываются вовсе — «нет данных» появляется
- * только там, где отсутствие само по себе значимо (§3.3).
- */
 export function StageCard({
   stage,
   pool,
@@ -83,79 +69,71 @@ export function StageCard({
           now,
           isOffline: offline,
         });
+  const hasRisk = option !== undefined && option.riskSignals.some((signal) => signal.severity !== 'info');
 
   return (
     <li
       className={cn(
-        'card-surface relative flex flex-col gap-3 p-4 transition-colors',
-        selected && 'border-violet ring-2 ring-violet/30',
+        'relative flex w-full shrink-0 flex-col rounded-[15px] border bg-[var(--color-surface)] p-3.5 lg:w-[272px]',
+        selected ? 'border-[var(--color-primary)]' : hasRisk ? 'border-[var(--color-grade-c)]' : 'border-line',
         busy && 'opacity-60',
       )}
-      style={{ transitionDuration: 'var(--duration-card)' }}
       aria-current={selected ? 'step' : undefined}
     >
-      <div className="flex items-start justify-between gap-3">
-        <div className="min-w-0">
-          <h3 className="text-[15px] font-semibold text-ink">{stage.title}</h3>
+      <button type="button" onClick={onSelect} className="flex w-full items-start gap-2.5 text-left">
+        <span
+          className={cn(
+            'grid size-[34px] shrink-0 place-items-center rounded-[10px]',
+            stage.kind === 'transfer' || stage.kind === 'wait'
+              ? 'bg-warning-soft text-warning'
+              : 'bg-[var(--color-accent-soft)] text-[var(--color-accent)]',
+          )}
+        >
+          <TransportIcon mode={iconMode(option, stage.kind)} />
+        </span>
+        <div className="min-w-0 flex-1">
+          <h3 className="m-0 text-sm font-extrabold tracking-[-0.01em]">{stage.title}</h3>
           {option !== undefined && <Subtitle option={option} />}
         </div>
-
-        {stage.temporarilyUnavailable ? (
-          <Badge tone="warning" icon={<AlertIcon />}>
-            Временно недоступно
-          </Badge>
-        ) : (
-          option !== undefined && (
-            <FreshnessBadge
-              fetchedAt={option.fetchedAt}
-              expiresAt={option.expiresAt}
-              now={now}
-              offline={offline}
-            />
-          )
-        )}
-      </div>
+      </button>
 
       {stage.temporarilyUnavailable ? (
-        <p className="text-sm text-muted">
+        <p className="mt-2.5 text-sm text-muted">
           Категория недоступна в этом поиске. Остальной маршрут собран и остаётся в силе.
         </p>
       ) : option === undefined ? (
-        <p className="text-sm text-muted">нет данных</p>
+        <p className="mt-2.5 text-sm text-muted">нет данных</p>
       ) : isTransportOption(option) ? (
-        <TransportBody option={option} freshness={freshness} />
+        <TransportBody option={option} freshness={freshness} now={now} offline={offline} />
       ) : isHotelOption(option) ? (
-        <HotelBody option={option} freshness={freshness} />
+        <HotelBody option={option} freshness={freshness} now={now} offline={offline} />
       ) : (
         <CalculatedBody option={option} />
       )}
 
       {option !== undefined && option.riskSignals.length > 0 && (
-        <ul className="flex flex-wrap gap-1.5">
+        <ul className="mt-2.5 flex flex-col gap-1.5">
           {option.riskSignals.map((signal) => (
-            <li key={signal.code}>
-              <Badge tone={RISK_TONE[signal.severity]} icon={<AlertIcon />}>
-                {signal.message}
-              </Badge>
+            <li
+              key={signal.code}
+              className="flex gap-1.5 rounded-[11px] bg-warning-soft px-2.5 py-2.5 text-[12.5px] leading-snug font-semibold text-warning"
+            >
+              <AlertIcon />
+              <span>{signal.message}</span>
             </li>
           ))}
         </ul>
       )}
 
       {!stage.temporarilyUnavailable && (
-        <div className="flex flex-wrap items-center gap-2 pt-1">
-          <Button size="sm" variant="secondary" onClick={onSelect}>
-            {selected ? 'Скрыть на глобусе' : 'Показать на глобусе'}
-          </Button>
-
+        <div className="mt-2.5 flex flex-wrap items-center gap-1.5">
           {alternativesCount > 0 && (
             <Button size="sm" variant="ghost" onClick={onOpenAlternatives}>
               {alternativesCount} {pluralizeRu(alternativesCount, 'вариант', 'варианта', 'вариантов')}
             </Button>
           )}
-
           {fallbackCount > 0 && (
-            <Button size="sm" variant="ghost" onClick={onOpenFallback} icon={<ShieldIcon />}>
+            <Button size="sm" variant="secondary" onClick={onOpenFallback} icon={<ShieldIcon />}>
               План Б
             </Button>
           )}
@@ -165,63 +143,61 @@ export function StageCard({
   );
 }
 
+function iconMode(
+  option: CandidateOption | undefined,
+  kind: ItineraryStage['kind'],
+): TransportIconMode {
+  if (kind === 'transfer' || kind === 'wait') return 'transfer';
+  if (option === undefined) return 'train';
+  if (isHotelOption(option)) return 'hotel';
+  if (isTransportOption(option)) return option.mode;
+  return 'transfer';
+}
+
 function Subtitle({ option }: { readonly option: CandidateOption }): React.JSX.Element | null {
   if (isTransportOption(option)) {
     const parts = [MODE_LABELS[option.mode], option.operator].filter(
       (part): part is string => part !== undefined && part !== '',
     );
-    return <p className="mt-0.5 text-sm text-muted">{parts.join(' · ')}</p>;
+    return <p className="mt-0.5 text-xs text-muted">{parts.join(' · ')}</p>;
   }
-
   if (isHotelOption(option)) {
-    return <p className="mt-0.5 text-sm text-muted">{option.name}</p>;
+    return <p className="mt-0.5 text-xs text-muted">{option.name}</p>;
   }
-
-  return null;
+  return <p className="mt-0.5 text-xs text-muted">Рассчитано нами</p>;
 }
 
 function TransportBody({
   option,
   freshness,
+  now,
+  offline,
 }: {
   readonly option: TransportOption;
   readonly freshness: FreshnessState;
+  readonly now: string;
+  readonly offline: boolean;
 }): React.JSX.Element {
   return (
-    <div className="flex flex-col gap-3">
-      <div className="flex items-start gap-3">
-        <TimePoint
-          at={option.departure.at}
-          place={option.departure.place.name}
-          align="start"
-        />
-        <div className="mt-2 flex min-w-0 flex-1 flex-col items-center gap-1">
-          <span className="text-xs text-muted tabular">{formatDuration(option.durationMinutes)}</span>
+    <div className="mt-2.5 flex flex-col gap-2.5">
+      <div className="flex items-start gap-2.5">
+        <TimePoint at={option.departure.at} place={option.departure.place.name} align="start" />
+        <div className="mt-1 flex min-w-0 flex-1 flex-col items-center gap-1">
+          <span className="text-[11px] text-muted tabular">{formatDuration(option.durationMinutes)}</span>
           <span aria-hidden="true" className="h-px w-full bg-line" />
-          <span className="text-xs text-muted">{formatTransfers(option.transferCount)}</span>
+          <span className="text-[11px] text-muted">{formatTransfers(option.transferCount)}</span>
         </div>
         <TimePoint at={option.arrival.at} place={option.arrival.place.name} align="end" />
       </div>
-
       <div className="flex flex-wrap items-baseline justify-between gap-2">
-        <p className="text-lg font-semibold text-ink tabular">{formatPrice(option.price)}</p>
-        {option.serviceClass !== undefined && (
-          <span className="text-sm text-muted">{option.serviceClass}</span>
-        )}
+        <p className="tabular text-base font-extrabold">{formatPrice(option.price)}</p>
+        <FreshnessBadge
+          fetchedAt={option.fetchedAt}
+          expiresAt={option.expiresAt}
+          now={now}
+          offline={offline}
+        />
       </div>
-
-      {option.segments !== undefined && option.segments.length > 1 && (
-        <ol className="flex flex-col gap-1 border-l border-line pl-3">
-          {option.segments.map((segment) => (
-            <li key={segment.id} className="text-xs text-muted">
-              {MODE_LABELS[segment.mode]}: {segment.departure.place.name} →{' '}
-              {segment.arrival.place.name}, {formatWallClockTime(segment.departure.at)}–
-              {formatWallClockTime(segment.arrival.at)}
-            </li>
-          ))}
-        </ol>
-      )}
-
       <Checkout option={option} freshness={freshness} />
     </div>
   );
@@ -230,36 +206,37 @@ function TransportBody({
 function HotelBody({
   option,
   freshness,
+  now,
+  offline,
 }: {
   readonly option: HotelOption;
   readonly freshness: FreshnessState;
+  readonly now: string;
+  readonly offline: boolean;
 }): React.JSX.Element {
   return (
-    <div className="flex flex-col gap-2">
+    <div className="mt-2.5 flex flex-col gap-2">
       <p className="text-sm text-muted">
-        {formatWallClockDate(option.checkIn)} — {formatWallClockDate(option.checkOut)},{' '}
-        {option.nights} {pluralizeRu(option.nights, 'ночь', 'ночи', 'ночей')}
+        {formatWallClockDate(option.checkIn)} — {formatWallClockDate(option.checkOut)}, {option.nights}{' '}
+        {pluralizeRu(option.nights, 'ночь', 'ночи', 'ночей')}
       </p>
-
-      <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
-        <p className="text-lg font-semibold text-ink tabular">{formatPrice(option.price)}</p>
-        {option.pricePerNight !== undefined && (
-          <span className="text-sm text-muted tabular">
-            {formatPrice(option.pricePerNight)} за ночь
-          </span>
-        )}
+      <div className="flex flex-wrap items-baseline justify-between gap-2">
+        <p className="tabular text-base font-extrabold">{formatPrice(option.price)}</p>
+        <FreshnessBadge
+          fetchedAt={option.fetchedAt}
+          expiresAt={option.expiresAt}
+          now={now}
+          offline={offline}
+        />
       </div>
-
       {option.rating !== undefined && (
         <p className="text-sm text-ink">
-          Рейтинг <span className="font-semibold tabular">{option.rating.toFixed(1)}</span> из 10
+          Рейтинг <span className="tabular font-bold">{option.rating.toFixed(1)}</span> из 10
         </p>
       )}
-
       {option.reviewSummary !== undefined && (
         <p className="text-sm text-muted">{option.reviewSummary.text}</p>
       )}
-
       {option.reviewRedFlags.length > 0 && (
         <ul className="flex flex-col gap-1">
           {option.reviewRedFlags.map((flag) => (
@@ -270,13 +247,6 @@ function HotelBody({
           ))}
         </ul>
       )}
-
-      {option.distanceToCenterKm !== undefined && (
-        <p className="text-sm text-muted tabular">
-          {option.distanceToCenterKm.toFixed(1)} км до центра
-        </p>
-      )}
-
       <Checkout option={option} freshness={freshness} />
     </div>
   );
@@ -284,30 +254,23 @@ function HotelBody({
 
 function CalculatedBody({ option }: { readonly option: CalculatedOption }): React.JSX.Element {
   return (
-    <div className="flex flex-col gap-2">
-      <div className="flex flex-wrap items-center gap-2">
-        <p className="text-[15px] font-medium text-ink tabular">
-          {formatDuration(option.durationMinutes)}
-        </p>
-        {/* §6.5: вычисленный блок всегда помечен — иначе он читался бы как данные из инвентаря. */}
-        <Badge tone="info" icon={<CalcIcon />}>
-          Рассчитано нами
-        </Badge>
+    <div className="mt-2.5 flex flex-col gap-2">
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <p className="tabular text-[15px] font-medium">{formatDuration(option.durationMinutes)}</p>
+        <Badge tone="info">Рассчитано нами</Badge>
       </div>
-
       {option.sameStation === false && (
         <p className="text-sm text-warning">Переход между разными точками отправления</p>
       )}
       {option.sameStation === undefined && (
         <p className="text-sm text-muted">Не удалось определить, меняется ли точка пересадки</p>
       )}
-
       {!option.bufferSatisfied && (
         <p className="flex items-start gap-1.5 text-sm text-warning">
           <AlertIcon />
           <span>
-            Запас меньше рекомендуемых {option.minimumBufferMinutes} мин — при задержке пересадка
-            под угрозой
+            Запас меньше рекомендуемых {option.minimumBufferMinutes} мин — при задержке пересадка под
+            угрозой
           </span>
         </p>
       )}
@@ -315,14 +278,6 @@ function CalculatedBody({ option }: { readonly option: CalculatedOption }): Reac
   );
 }
 
-/**
- * Оформление всегда уводит на ТуТу и всегда в новой вкладке: покупка совершается
- * человеком на стороне сервиса (§2.1, human-in-the-loop). URL уже проверен по allowlist
- * при нормализации, поэтому здесь достаточно его наличия.
- *
- * При устаревших данных ссылка не показывается вовсе (§14.3): отправить человека
- * оформлять цену, которую мы сами считаем неактуальной, — худший из возможных исходов.
- */
 function Checkout({
   option,
   freshness,
@@ -331,7 +286,6 @@ function Checkout({
   readonly freshness: FreshnessState;
 }): React.JSX.Element | null {
   if (option.checkoutUrl === undefined) return null;
-
   if (!isCheckoutAllowedForFreshness(freshness)) {
     return (
       <p className="text-sm text-muted">
@@ -339,24 +293,14 @@ function Checkout({
       </p>
     );
   }
-
   return (
     <a
       href={option.checkoutUrl}
       target="_blank"
       rel="noopener noreferrer"
-      className="tap-target inline-flex w-fit items-center gap-1.5 text-sm font-medium text-navy underline decoration-violet/40 underline-offset-4 hover:decoration-violet"
+      className="tap-target inline-flex w-fit items-center gap-1.5 text-sm font-bold text-[var(--color-accent)] underline underline-offset-4"
     >
-      Перейти к оформлению на ТуТу
-      <svg viewBox="0 0 16 16" className="size-3.5" fill="none" aria-hidden="true">
-        <path
-          d="M6 3h7v7M13 3L4 12"
-          stroke="currentColor"
-          strokeWidth="1.6"
-          strokeLinecap="round"
-          strokeLinejoin="round"
-        />
-      </svg>
+      Открыть на Туту
       <span className="visually-hidden">Откроется в новой вкладке</span>
     </a>
   );
@@ -373,41 +317,25 @@ function TimePoint({
 }): React.JSX.Element {
   return (
     <div className={cn('flex min-w-0 flex-col', align === 'end' && 'items-end text-right')}>
-      <span className="text-lg leading-tight font-semibold text-ink tabular">
-        {formatWallClockTime(at)}
-      </span>
-      <span className="text-xs text-muted">{formatWallClockDate(at)}</span>
-      <span className="mt-0.5 truncate text-sm text-ink">{place}</span>
+      <span className="tabular text-[17px] leading-tight font-extrabold">{formatWallClockTime(at)}</span>
+      <span className="text-[11px] text-muted">{formatWallClockDate(at)}</span>
+      <span className="mt-0.5 truncate text-xs">{place}</span>
     </div>
   );
 }
 
 function AlertIcon(): React.JSX.Element {
   return (
-    <svg viewBox="0 0 16 16" className="size-3.5 shrink-0" fill="none">
-      <path
-        d="M8 2.5l6 11H2l6-11z"
-        stroke="currentColor"
-        strokeWidth="1.5"
-        strokeLinejoin="round"
-      />
+    <svg viewBox="0 0 16 16" className="mt-0.5 size-[13px] shrink-0" fill="none">
+      <path d="M8 2.5l6 11H2l6-11z" stroke="currentColor" strokeWidth="1.5" strokeLinejoin="round" />
       <path d="M8 6.4v3M8 11.6h.01" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
-    </svg>
-  );
-}
-
-function CalcIcon(): React.JSX.Element {
-  return (
-    <svg viewBox="0 0 16 16" className="size-3.5" fill="none">
-      <rect x="3" y="2" width="10" height="12" rx="2" stroke="currentColor" strokeWidth="1.4" />
-      <path d="M5.6 5.4h4.8M5.6 8.4h1.2M8 8.4h1.2M10.4 8.4h.01M5.6 11h1.2M8 11h3" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" />
     </svg>
   );
 }
 
 function ShieldIcon(): React.JSX.Element {
   return (
-    <svg viewBox="0 0 16 16" className="size-4" fill="none" aria-hidden="true">
+    <svg viewBox="0 0 16 16" className="size-3.5" fill="none" aria-hidden="true">
       <path
         d="M8 1.8l5 1.8v4.2c0 3-2.1 5.2-5 6.4-2.9-1.2-5-3.4-5-6.4V3.6l5-1.8z"
         stroke="currentColor"

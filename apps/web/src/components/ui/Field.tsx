@@ -30,7 +30,7 @@ export function Field({ label, error, hint, children }: FieldProps): React.JSX.E
 
   return (
     <div className="flex flex-col gap-1.5">
-      <label htmlFor={id} className="text-sm font-medium text-ink">
+      <label htmlFor={id} className="text-xs font-bold text-muted">
         {label}
       </label>
 
@@ -47,7 +47,7 @@ export function Field({ label, error, hint, children }: FieldProps): React.JSX.E
       )}
 
       {error !== undefined && (
-        <p id={errorId} className="flex items-center gap-1.5 text-xs font-medium text-danger">
+        <p id={errorId} className="flex items-center gap-1.5 text-xs font-bold text-danger">
           <svg viewBox="0 0 16 16" className="size-3.5 shrink-0" aria-hidden="true">
             <circle cx="8" cy="8" r="7" stroke="currentColor" strokeWidth="1.5" fill="none" />
             <path d="M8 4.5v4.2M8 11.2h.01" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
@@ -60,9 +60,9 @@ export function Field({ label, error, hint, children }: FieldProps): React.JSX.E
 }
 
 export const inputClassName = cn(
-  'h-11 w-full rounded-[14px] border border-line bg-white px-3 text-[15px] text-ink',
+  'h-11 w-full min-w-0 rounded-[12px] border border-line bg-[var(--color-input)] px-3 text-[15px] font-semibold text-ink',
   'placeholder:text-muted/70',
-  'aria-[invalid=true]:border-danger aria-[invalid=true]:bg-danger-soft/40',
+  'aria-[invalid=true]:border-[var(--color-danger-ink)] aria-[invalid=true]:bg-danger-soft',
 );
 
 export type TextInputProps = InputHTMLAttributes<HTMLInputElement>;

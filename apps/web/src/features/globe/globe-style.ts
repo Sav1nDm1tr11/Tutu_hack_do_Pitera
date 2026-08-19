@@ -35,30 +35,30 @@ export const GLOBE_STYLE: StyleSpecification = {
     {
       id: 'ocean',
       type: 'background',
-      paint: { 'background-color': '#dfe6fb' },
+      paint: { 'background-color': '#ede9fe' },
     },
     {
       id: 'land-fill',
       type: 'fill',
       source: 'land',
-      paint: { 'fill-color': '#f4f3fc' },
+      paint: { 'fill-color': '#ddd6fe' },
     },
     {
       id: 'land-outline',
       type: 'line',
       source: 'land',
-      paint: { 'line-color': '#c9cbe9', 'line-width': 0.8 },
+      paint: { 'line-color': '#c4b5fd', 'line-width': 0.8 },
     },
   ],
 };
 
 /** Цвета линий и маркеров маршрута. Держим рядом со стилем, чтобы палитра была одна. */
 export const ROUTE_COLORS = {
-  main: '#11106b',
-  selected: '#ed6436',
-  muted: '#a9a8cf',
-  markerOrigin: '#11106b',
-  markerDestination: '#ed6436',
-  markerWaypoint: '#7868ee',
-  markerHotel: '#197a55',
+  main: '#6D28D9',
+  selected: '#F59E0B',
+  muted: '#C4B5FD',
+  markerOrigin: '#6D28D9',
+  markerDestination: '#6D28D9',
+  markerWaypoint: '#F59E0B',
+  markerHotel: '#10B981',
 } as const;

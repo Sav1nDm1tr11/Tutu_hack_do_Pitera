@@ -31,15 +31,15 @@ export function BottomSheet({
       <Dialog.Portal>
         <Dialog.Overlay
           className={cn(
-            'fixed inset-0 z-40 bg-[#15133f]/45 backdrop-blur-[2px]',
+            'fixed inset-0 z-40 bg-[rgb(20_16_31_/_0.5)] backdrop-blur-[2px]',
             'data-[state=open]:animate-in data-[state=open]:fade-in',
           )}
         />
         <Dialog.Content
           className={cn(
             'fixed inset-x-0 bottom-0 z-50 max-h-[85dvh] overflow-hidden',
-            'flex flex-col rounded-t-[28px] bg-card',
-            'sm:inset-x-auto sm:right-4 sm:bottom-4 sm:max-h-[calc(100dvh-2rem)] sm:w-[420px] sm:rounded-[24px]',
+            'flex flex-col rounded-t-[24px] bg-[var(--color-surface)] text-ink',
+            'sm:inset-x-auto sm:bottom-6 sm:left-1/2 sm:max-h-[82dvh] sm:w-[520px] sm:-translate-x-1/2 sm:rounded-[22px]',
           )}
           style={{ boxShadow: 'var(--shadow-sheet)' }}
         >

@@ -1,12 +1,24 @@
 import { useMemo, useState } from 'react';
-import type { PlanConfiguration, RoutePlan } from '@tutu-plan-b/domain';
-import { FALLBACK_CAVEAT } from '@tutu-plan-b/domain';
+import type { CandidateOption, PlanConfiguration, RoutePlan } from '@tutu-plan-b/domain';
+import {
+  FALLBACK_CAVEAT,
+  deriveFreshness,
+  formatPrice,
+  formatWallClockDate,
+  formatWallClockTime,
+  isCheckoutAllowedForFreshness,
+  isHotelOption,
+  isTransportOption,
+  pluralizeRu,
+} from '@tutu-plan-b/domain';
 import { GlobePanel } from '../globe/GlobePanel';
 import { ConfigurationSwitcher } from './ConfigurationSwitcher';
 import { OptionListSheet } from './OptionListSheet';
 import { PlanSummary } from './PlanSummary';
 import { PlanWarnings } from './PlanWarnings';
+import { ScoreSheet } from './ScoreSheet';
 import { StageCard } from './StageCard';
+import { BottomSheet } from '../../components/ui/BottomSheet';
 import { usePlanStore } from '../../store/plan-store';
 
 export interface PlanViewProps {
@@ -17,7 +29,9 @@ export interface PlanViewProps {
 type SheetState =
   | { readonly kind: 'closed' }
   | { readonly kind: 'alternatives'; readonly stageId: string }
-  | { readonly kind: 'fallback'; readonly stageId: string };
+  | { readonly kind: 'fallback'; readonly stageId: string }
+  | { readonly kind: 'score' }
+  | { readonly kind: 'checkout' };
 
 export function PlanView({ plan, offline }: PlanViewProps): React.JSX.Element {
   const activeConfigurationId = usePlanStore((state) => state.activeConfigurationId);
@@ -46,7 +60,7 @@ export function PlanView({ plan, offline }: PlanViewProps): React.JSX.Element {
     return (
       <section className="mx-auto flex w-full max-w-2xl flex-col gap-4">
         <div className="card-surface flex flex-col gap-3 p-6">
-          <h2 className="text-lg font-semibold text-ink">Подходящих вариантов не нашлось</h2>
+          <h2 className="text-lg font-extrabold">Подходящих вариантов не нашлось</h2>
           <p className="text-sm text-muted">
             Мы не показываем маршруты, которые нарушают ваши ограничения. Попробуйте ослабить одно
             из условий — например, увеличить бюджет или разрешить пересадку.
@@ -57,42 +71,99 @@ export function PlanView({ plan, offline }: PlanViewProps): React.JSX.Element {
     );
   }
 
+  const checkoutRows = checkoutLinks(configuration, plan, offline);
+  const checkoutBlocked = offline || checkoutRows.every((row) => !row.allowed);
+  const checkoutNote = offline
+    ? 'Нет сети. Кнопка заблокирована: цену нельзя проверить.'
+    : checkoutBlocked
+      ? 'Цена устарела. Кнопка заблокирована до обновления.'
+      : 'Откроется официальная страница Туту. Мы не бронируем и не принимаем оплату.';
+
   const sheetStage =
-    sheet.kind === 'closed'
-      ? undefined
-      : configuration.stages.find((stage) => stage.id === sheet.stageId);
+    sheet.kind === 'alternatives' || sheet.kind === 'fallback'
+      ? configuration.stages.find((stage) => stage.id === sheet.stageId)
+      : undefined;
+  const selectedOption =
+    sheetStage === undefined ? undefined : plan.candidatePool[sheetStage.selectedOptionId];
 
   return (
-    <div className="flex flex-col gap-4 lg:grid lg:grid-cols-[1fr_400px] lg:items-start lg:gap-6">
-      {/* На мобильном сводка липкая и стоит первой (§6.3): цена и оценка должны быть
-          видны во время прокрутки этапов, иначе сравнение вариантов требует памяти. */}
-      <div className="sticky top-0 z-20 -mx-4 bg-surface/95 px-4 py-3 backdrop-blur lg:hidden">
-        <PlanSummary configuration={configuration} compact />
+    <div className="flex flex-col">
+      <header className="mb-3.5 flex flex-wrap items-end justify-between gap-3">
+        <div>
+          <h1 className="m-0 text-[26px] font-extrabold tracking-[-0.035em] leading-[1.05] lg:text-[30px]">
+            {plan.request.origin.name} <span className="text-[var(--color-accent)]">→</span>{' '}
+            {plan.request.destination.name}
+          </h1>
+          <p className="mt-1 text-[13.5px] text-muted">{tripMeta(plan)}</p>
+        </div>
+        <span className="rounded-full bg-[var(--color-accent-soft)] px-2.5 py-1.5 text-[11.5px] font-bold text-[var(--color-accent)]">
+          Версия {plan.revision + 1} · собран в {formatWallClockTime(plan.validAt)}
+        </span>
+      </header>
+
+      <div className="sticky top-[57px] z-20 -mx-4 mb-3 bg-[var(--color-bg)]/90 px-4 py-2.5 backdrop-blur lg:hidden">
+        <PlanSummary
+          configuration={configuration}
+          pool={plan.candidatePool}
+          budgetAmount={plan.request.budget.amount}
+          checkoutBlocked={checkoutBlocked}
+          checkoutNote={checkoutNote}
+          compact
+          onOpenScore={() => setSheet({ kind: 'score' })}
+          onCheckout={() => setSheet({ kind: 'checkout' })}
+        />
       </div>
 
-      <div className="flex min-w-0 flex-col gap-4">
-        <div
-          className="h-[var(--globe-height-mobile)] w-full lg:h-[min(45vh,460px)]"
-          style={{ contain: 'layout paint' }}
-        >
+      <div className="grid items-start gap-3.5 lg:grid-cols-[224px_minmax(0,1fr)_280px]">
+        <aside className="order-1">
+          <p className="mb-2 text-[11px] font-bold tracking-[0.07em] text-muted uppercase">
+            Конфигурации
+          </p>
+          <ConfigurationSwitcher
+            configurations={plan.configurations}
+            activeId={configuration.id}
+            onChange={setActiveConfiguration}
+          />
+        </aside>
+
+        <section className="order-2 min-h-0 overflow-hidden rounded-2xl border border-line bg-[var(--color-surface)] lg:min-h-[420px]">
           <GlobePanel
             configuration={configuration}
             pool={plan.candidatePool}
             selectedStageId={selectedStageId}
-            onSelectStage={(stageId) => selectStage(stageId === selectedStageId ? undefined : stageId)}
+            onSelectStage={(stageId) =>
+              selectStage(stageId === selectedStageId ? undefined : stageId)
+            }
           />
+        </section>
+
+        <aside className="order-3 hidden rounded-2xl border border-line bg-[var(--color-surface)] p-4 shadow-[var(--shadow-card)] lg:sticky lg:top-[112px] lg:block">
+          <PlanSummary
+            configuration={configuration}
+            pool={plan.candidatePool}
+            budgetAmount={plan.request.budget.amount}
+            checkoutBlocked={checkoutBlocked}
+            checkoutNote={checkoutNote}
+            onOpenScore={() => setSheet({ kind: 'score' })}
+            onCheckout={() => setSheet({ kind: 'checkout' })}
+          />
+        </aside>
+      </div>
+
+      <section className="mt-4 rounded-2xl border border-line bg-[var(--color-surface)] p-3.5">
+        <div className="mb-3 flex items-baseline justify-between gap-2.5">
+          <div>
+            <h2 className="m-0 text-base font-extrabold tracking-[-0.02em]">Этапы маршрута</h2>
+            <p className="mt-0.5 text-[12.5px] text-muted">
+              У каждого этапа свои факты. Там, где есть замена, показываем План Б.
+            </p>
+          </div>
+          <span className="whitespace-nowrap text-[11.5px] font-bold text-muted">
+            {configuration.stages.length}{' '}
+            {pluralizeRu(configuration.stages.length, 'этап', 'этапа', 'этапов')}
+          </span>
         </div>
-
-        <ConfigurationSwitcher
-          configurations={plan.configurations}
-          activeId={configuration.id}
-          onChange={setActiveConfiguration}
-        />
-
-        <Explanation configuration={configuration} />
-
-        {/* Этапы — семантически упорядоченный список (§19): порядок здесь несёт смысл. */}
-        <ol className="flex flex-col gap-3" aria-label="Этапы маршрута">
+        <ol className="m-0 flex list-none flex-col gap-2.5 p-0 lg:flex-row lg:overflow-x-auto lg:pb-1.5">
           {configuration.stages.map((stage) => (
             <StageCard
               key={stage.id}
@@ -110,16 +181,33 @@ export function PlanView({ plan, offline }: PlanViewProps): React.JSX.Element {
             />
           ))}
         </ol>
+      </section>
 
+      <div className="mt-3">
         <PlanWarnings warnings={plan.warnings} />
       </div>
 
-      <aside className="hidden lg:sticky lg:top-4 lg:flex lg:flex-col lg:gap-4">
-        <div className="card-surface p-5">
-          <h2 className="mb-3 text-base font-semibold text-ink">Итог поездки</h2>
-          <PlanSummary configuration={configuration} />
-        </div>
-      </aside>
+      <div className="mt-3 lg:hidden">
+        <PlanSummary
+          configuration={configuration}
+          pool={plan.candidatePool}
+          budgetAmount={plan.request.budget.amount}
+          checkoutBlocked={checkoutBlocked}
+          checkoutNote={checkoutNote}
+          onOpenScore={() => setSheet({ kind: 'score' })}
+          onCheckout={() => setSheet({ kind: 'checkout' })}
+        />
+      </div>
+
+      {sheet.kind === 'score' && (
+        <ScoreSheet
+          open
+          onOpenChange={(open) => {
+            if (!open) setSheet({ kind: 'closed' });
+          }}
+          configuration={configuration}
+        />
+      )}
 
       {sheetStage !== undefined && (
         <OptionListSheet
@@ -127,7 +215,7 @@ export function PlanView({ plan, offline }: PlanViewProps): React.JSX.Element {
           onOpenChange={(open) => {
             if (!open) setSheet({ kind: 'closed' });
           }}
-          title={sheet.kind === 'fallback' ? 'План Б' : 'Другие варианты'}
+          title={sheet.kind === 'fallback' ? 'План Б' : 'Альтернативы и План Б'}
           description={sheetStage.title}
           optionIds={
             sheet.kind === 'fallback'
@@ -136,6 +224,7 @@ export function PlanView({ plan, offline }: PlanViewProps): React.JSX.Element {
           }
           pool={plan.candidatePool}
           selectedOptionId={sheetStage.selectedOptionId}
+          selectedPrice={selectedOption?.price}
           busy={swappingStageId === sheetStage.id}
           caveat={sheet.kind === 'fallback' ? FALLBACK_CAVEAT : undefined}
           onPick={(optionId) => {
@@ -145,46 +234,118 @@ export function PlanView({ plan, offline }: PlanViewProps): React.JSX.Element {
           }}
         />
       )}
+
+      {sheet.kind === 'checkout' && (
+        <BottomSheet
+          open
+          onOpenChange={(open) => {
+            if (!open) setSheet({ kind: 'closed' });
+          }}
+          title="Оформление"
+          description="Каждый этап оформляется отдельно на Туту."
+        >
+          {checkoutRows.length === 0 ? (
+            <p className="text-sm text-muted">
+              Туту не вернул ссылки на оформление для выбранных этапов.
+            </p>
+          ) : (
+            <div className="overflow-hidden rounded-[12px] border border-line">
+              {checkoutRows.map((row) => (
+                <div
+                  key={row.id}
+                  className="flex items-center justify-between gap-2.5 border-b border-line bg-[var(--color-input)] px-3.5 py-2.5 last:border-b-0"
+                >
+                  <span className="min-w-0">
+                    <span className="block text-[13px] font-bold">{row.title}</span>
+                    <span className="block text-[11.5px] text-muted">{row.meta}</span>
+                  </span>
+                  <span className="flex shrink-0 flex-col items-end gap-1">
+                    <span className="tabular text-sm font-extrabold">{row.price}</span>
+                    {row.url !== undefined && row.allowed ? (
+                      <a
+                        href={row.url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-[12.5px] font-bold text-[var(--color-accent)]"
+                      >
+                        Открыть на Туту
+                      </a>
+                    ) : (
+                      <span className="text-[11.5px] text-muted">Ссылка недоступна</span>
+                    )}
+                  </span>
+                </div>
+              ))}
+            </div>
+          )}
+          <p className="mt-3 text-xs leading-normal text-muted">
+            Приложение не бронирует и не принимает оплату. Цена и наличие проверяются на страницах
+            Туту.
+          </p>
+        </BottomSheet>
+      )}
     </div>
   );
 }
 
-/**
- * Объяснение выбора (§11.4). Каждый пункт привязан к коду причины из расчёта, поэтому
- * список нельзя дополнить «общими словами» — здесь это гарантируется данными, а не
- * дисциплиной разработчика.
- */
-function Explanation({
-  configuration,
-}: {
-  readonly configuration: PlanConfiguration;
-}): React.JSX.Element {
-  const { explanation } = configuration;
+function tripMeta(plan: RoutePlan): string {
+  const parts = [
+    formatWallClockDate(plan.request.departDate),
+    plan.request.returnDate === undefined ? undefined : formatWallClockDate(plan.request.returnDate),
+  ].filter((part): part is string => part !== undefined);
 
-  return (
-    <section className="card-surface flex flex-col gap-2.5 p-4">
-      <h2 className="text-[15px] font-semibold text-ink">{explanation.headline}</h2>
+  const adults = plan.request.travelers.adults;
+  const children = plan.request.travelers.children.length;
+  const people = `${adults} ${pluralizeRu(adults, 'взрослый', 'взрослых', 'взрослых')}`;
+  const kids =
+    children === 0 ? undefined : `${children} ${pluralizeRu(children, 'ребёнок', 'ребёнка', 'детей')}`;
+  const trip = plan.request.tripType === 'roundTrip' ? 'туда и обратно' : 'в одну сторону';
 
-      {explanation.bullets.length > 0 && (
-        <ul className="flex flex-col gap-1.5">
-          {explanation.bullets.map((bullet) => (
-            <li key={bullet.reasonCode} className="flex items-start gap-2 text-sm text-ink">
-              <span aria-hidden="true" className="mt-1.5 size-1.5 shrink-0 rounded-full bg-violet" />
-              <span>{bullet.text}</span>
-            </li>
-          ))}
-        </ul>
-      )}
+  return [parts.join(' – '), people, kids, trip].filter(Boolean).join(' · ');
+}
 
-      {explanation.caveats.length > 0 && (
-        <ul className="flex flex-col gap-1 border-t border-line pt-2">
-          {explanation.caveats.map((caveat) => (
-            <li key={caveat} className="text-xs text-muted">
-              {caveat}
-            </li>
-          ))}
-        </ul>
-      )}
-    </section>
-  );
+function checkoutLinks(
+  configuration: PlanConfiguration,
+  plan: RoutePlan,
+  offline: boolean,
+) {
+  return configuration.stages.flatMap((stage) => {
+    const option = plan.candidatePool[stage.selectedOptionId];
+    if (option === undefined || option.kind === 'calculated') return [];
+    if (option.checkoutUrl === undefined && option.price === undefined) return [];
+    return [checkoutRow(stage.id, stage.title, option, plan.validAt, offline)];
+  });
+}
+
+function checkoutRow(
+  id: string,
+  title: string,
+  option: CandidateOption,
+  now: string,
+  offline: boolean,
+) {
+  const freshness = deriveFreshness({
+    fetchedAt: option.fetchedAt,
+    expiresAt: option.expiresAt,
+    now,
+    isOffline: offline,
+  });
+  return {
+    id,
+    title,
+    meta: optionMeta(option),
+    price: formatPrice(option.price),
+    url: option.checkoutUrl,
+    allowed: option.checkoutUrl !== undefined && isCheckoutAllowedForFreshness(freshness),
+  };
+}
+
+function optionMeta(option: CandidateOption): string {
+  if (isTransportOption(option)) {
+    return `${option.departure.place.name} → ${option.arrival.place.name}`;
+  }
+  if (isHotelOption(option)) {
+    return option.name;
+  }
+  return 'Рассчитанный этап';
 }
