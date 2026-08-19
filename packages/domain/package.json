@@ -1,0 +1,25 @@
+{
+  "name": "@tutu-plan-b/domain",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Доменные контракты, scoring, нормализация, fallback и геометрия. Без framework SDK.",
+  "exports": {
+    ".": "./src/index.ts",
+    "./contracts": "./src/contracts/index.ts",
+    "./scoring": "./src/scoring/index.ts",
+    "./geo": "./src/geo/index.ts",
+    "./normalization": "./src/normalization/index.ts",
+    "./fallback": "./src/fallback/index.ts"
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit",
+    "build": "echo \"domain распространяется как исходники внутри workspace\""
+  },
+  "dependencies": {
+    "zod": "4.4.3"
+  },
+  "devDependencies": {
+    "typescript": "5.9.3"
+  }
+}

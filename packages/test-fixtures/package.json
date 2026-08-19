@@ -1,0 +1,22 @@
+{
+  "name": "@tutu-plan-b/test-fixtures",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Детерминированные raw-записи инвентаря и golden-сценарии для eval.",
+  "exports": {
+    ".": "./src/index.ts",
+    "./inventory": "./src/inventory/index.ts",
+    "./scenarios": "./src/scenarios/index.ts"
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit",
+    "build": "echo \"fixtures распространяются как исходники внутри workspace\""
+  },
+  "dependencies": {
+    "@tutu-plan-b/domain": "workspace:*"
+  },
+  "devDependencies": {
+    "typescript": "5.9.3"
+  }
+}

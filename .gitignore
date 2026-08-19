@@ -1,0 +1,29 @@
+node_modules/
+dist/
+build/
+coverage/
+.turbo/
+*.tsbuildinfo
+
+# Secrets — никогда не коммитим
+.env
+.env.local
+.env.*.local
+
+# Playwright
+playwright-report/
+test-results/
+blob-report/
+/e2e/.auth/
+
+# OS / editor
+.DS_Store
+Thumbs.db
+*.log
+npm-debug.log*
+pnpm-debug.log*
+
+# Локальные артефакты разработки
+tmp/
+.vite/
+dev-dist/

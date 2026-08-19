@@ -1,0 +1,42 @@
+{
+  "name": "tutu-plan-b",
+  "version": "0.1.0",
+  "private": true,
+  "description": "«ТуТу План Б» — PWA, которая стресс-тестирует маршрут до покупки и заранее собирает план Б",
+  "type": "module",
+  "packageManager": "pnpm@10.34.5",
+  "engines": {
+    "node": ">=22.12.0"
+  },
+  "scripts": {
+    "dev": "pnpm --parallel --filter \"./apps/**\" dev",
+    "build": "pnpm --recursive build",
+    "typecheck": "pnpm --recursive typecheck",
+    "lint": "eslint .",
+    "lint:fix": "eslint . --fix",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:e2e": "playwright test",
+    "mcp:inspect": "pnpm --filter @tutu-plan-b/api mcp:inspect",
+    "eval": "pnpm --filter @tutu-plan-b/api eval",
+    "verify": "pnpm lint && pnpm typecheck && pnpm test && pnpm build",
+    "start": "pnpm --filter @tutu-plan-b/api start"
+  },
+  "devDependencies": {
+    "@axe-core/playwright": "4.13.0",
+    "@eslint/js": "10.0.1",
+    "@playwright/test": "1.62.1",
+    "@types/node": "26.2.0",
+    "@vitest/coverage-v8": "4.1.11",
+    "eslint": "10.8.1",
+    "eslint-plugin-react-hooks": "7.1.1",
+    "globals": "17.11.0",
+    "prettier": "3.9.6",
+    "prettier-plugin-tailwindcss": "0.8.1",
+    "typescript": "5.9.3",
+    "typescript-eslint": "8.67.0",
+    "vitest": "4.1.11"
+  }
+}

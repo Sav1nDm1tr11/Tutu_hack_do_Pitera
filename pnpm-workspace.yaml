@@ -1,0 +1,7 @@
+packages:
+  - 'apps/*'
+  - 'packages/*'
+
+# MapLibre и Vite тянут нативные/сборочные зависимости; разрешаем только их build-скрипты.
+onlyBuiltDependencies:
+  - esbuild

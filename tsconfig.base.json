@@ -1,0 +1,40 @@
+{
+  "$schema": "https://json.schemastore.org/tsconfig",
+  "compilerOptions": {
+    "target": "ES2023",
+
+    // DOM подключён ради WHATWG-примитивов (`URL`), которые существуют и в Node 22,
+    // и в браузере, но не входят в lib ES2023. packages/domain раздаётся как исходники,
+    // поэтому его lib обязан совпадать с lib потребителей — иначе каждый из них должен
+    // повторять эту настройку у себя. Доступ domain к окружению закрыт правилом
+    // no-restricted-globals в eslint.config.js, а не отсутствием типов.
+    "lib": ["ES2023", "DOM"],
+
+    // packages/domain раздаётся как исходники и потребляется и Vite, и tsx.
+    // Bundler-резолюция позволяет писать относительные импорты без расширений
+    // в одном стиле во всех пакетах.
+    "module": "ESNext",
+    "moduleResolution": "bundler",
+    "moduleDetection": "force",
+    "isolatedModules": true,
+    "verbatimModuleSyntax": true,
+
+    "strict": true,
+    "noUncheckedIndexedAccess": true,
+    "exactOptionalPropertyTypes": true,
+    "noImplicitOverride": true,
+    "noFallthroughCasesInSwitch": true,
+    "noPropertyAccessFromIndexSignature": false,
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
+
+    "declaration": true,
+    "declarationMap": true,
+    "sourceMap": true,
+    "composite": false,
+    "skipLibCheck": true,
+    "esModuleInterop": true,
+    "forceConsistentCasingInFileNames": true,
+    "resolveJsonModule": true
+  }
+}
