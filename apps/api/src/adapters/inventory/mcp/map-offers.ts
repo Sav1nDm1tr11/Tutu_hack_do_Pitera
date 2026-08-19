@@ -90,6 +90,52 @@ const PRICE_AMOUNT = [
 
 const PRICE_PER_NIGHT = ['pricepernight', 'pricepernightamount', 'nightlyprice', 'заночь'] as const;
 
+/** Объекты, внутри которых цена лежит как `{ amount, currency }` (Tutu MCP) или `{ price_from }` (тарифы ЖД). */
+const PRICE_RECORD = ['price', 'totalprice', 'priceamount', 'cost', 'fares', 'цена'] as const;
+
+/** Имена суммы внутри такого объекта. Порядок — от точного к запасному. */
+const NESTED_AMOUNT = ['amount', 'value', 'total', 'price', 'pricefrom', 'minprice'] as const;
+
+const CURRENCY = ['currency', 'валюта'] as const;
+
+const CARRIERS = ['carriers', 'carrierlist', 'airlines', 'перевозчики'] as const;
+
+/**
+ * Цена и валюта, включая вложенную форму.
+ *
+ * `pick()` ищет точное имя, поэтому на `price: { amount, currency }` плоский `pickNumber`
+ * возвращает undefined — вариант остаётся без цены. Здесь плоское значение пробуется
+ * первым, а вложенный объект — вторым; ничего не достраивается, если нет ни того, ни другого.
+ */
+function pickMoney(
+  record: Record<string, unknown>,
+  amountAliases: readonly string[],
+): { readonly amount: number | undefined; readonly currency: string | undefined } {
+  const nested = pickRecord(record, PRICE_RECORD);
+  const amount =
+    pickNumber(record, amountAliases) ??
+    (nested === undefined ? undefined : pickNumber(nested, NESTED_AMOUNT));
+  const currency =
+    pickString(record, CURRENCY) ??
+    (nested === undefined ? undefined : pickString(nested, CURRENCY));
+
+  return { amount, currency };
+}
+
+/** `carriers: ['ФПК']` — массив, который `pickString` пропускает. Несколько перевозчиков склеиваются. */
+function pickOperator(
+  record: Record<string, unknown>,
+  aliases: readonly string[],
+): string | undefined {
+  const flat = pickString(record, aliases);
+  if (flat !== undefined) return flat;
+
+  const list = pickStringArray(record, CARRIERS);
+  if (list === undefined) return undefined;
+  const unique = [...new Set(list.map((entry) => entry.trim()).filter((entry) => entry !== ''))];
+  return unique.length === 0 ? undefined : unique.join(', ');
+}
+
 const CHECKOUT_URL = [
   'checkouturl',
   'deeplink',
@@ -150,10 +196,23 @@ function mapTransportOffer(
   index: number,
 ): RawTransportOffer {
   const segments = pickArray(record, ['segments', 'legs', 'hops', 'trips', 'пересадки']);
-  const mappedSegments = segments?.flatMap((item, segmentIndex) => {
+  // Tutu MCP отдаёт `legs[].segments[]`: сама нога — это направление, а пересадки считаются
+  // по вложенным сегментам. Разворачиваем их, иначе число пересадок всегда получалось 0.
+  const flatSegments = segments?.flatMap((item) => {
     if (!isRecord(item)) return [];
-    return [mapSegment(item, `${syntheticId(record, index)}:s${segmentIndex}`)];
+    const nested = pickArray(item, ['segments']);
+    return nested === undefined ? [item] : nested.filter(isRecord);
   });
+  const mappedSegments = flatSegments?.map((item, segmentIndex) =>
+    mapSegment(item, `${syntheticId(record, index)}:s${segmentIndex}`),
+  );
+
+  const money = pickMoney(record, PRICE_AMOUNT);
+  // `segments_count` — число сегментов, пересадок на единицу меньше.
+  const segmentsCount = pickNumber(record, ['segmentscount', 'segmentcount']);
+  const transferCount =
+    pickNumber(record, ['transfercount', 'transfers', 'stops', 'пересадки']) ??
+    (segmentsCount === undefined ? undefined : Math.max(0, Math.trunc(segmentsCount) - 1));
 
   const firstSegment = mappedSegments?.[0];
   const lastSegment = mappedSegments?.[mappedSegments.length - 1];
@@ -165,7 +224,10 @@ function mapTransportOffer(
       'mode',
       normalizeSourceMode(pickString(record, ['mode', 'transport', 'type', 'kind', 'vehicle'])),
     ),
-    ...optional('operator', pickString(record, ['operator', 'carrier', 'company', 'airline', 'перевозчик'])),
+    ...optional(
+      'operator',
+      pickOperator(record, ['operator', 'carrier', 'company', 'airline', 'перевозчик']),
+    ),
     ...optional(
       'departurePlace',
       mapPlace(pick(record, DEPARTURE_PLACE)) ?? firstSegment?.departurePlace,
@@ -181,15 +243,12 @@ function mapTransportOffer(
     ...optional('arrivalAt', pickString(record, ARRIVAL_AT) ?? lastSegment?.arrivalAt),
     ...optional(
       'durationMinutes',
-      pickNumber(record, ['durationminutes', 'duration', 'traveltime', 'времявпути']),
+      pickNumber(record, ['durationminutes', 'durationmin', 'duration', 'traveltime', 'времявпути']),
     ),
-    ...optional(
-      'transferCount',
-      pickNumber(record, ['transfercount', 'transfers', 'stops', 'пересадки']),
-    ),
+    ...optional('transferCount', transferCount),
     ...optional('segments', mappedSegments),
-    ...optional('priceAmount', pickNumber(record, PRICE_AMOUNT)),
-    ...optional('currency', pickString(record, ['currency', 'валюта'])),
+    ...optional('priceAmount', money.amount),
+    ...optional('currency', money.currency),
     ...optional('serviceClass', pickString(record, ['serviceclass', 'class', 'cabin', 'класс'])),
     ...optional('seatsAvailable', pickNumber(record, ['seatsavailable', 'seats', 'available', 'места'])),
     ...optional('refundable', pickBoolean(record, ['refundable', 'возвратный'])),
@@ -202,7 +261,7 @@ function mapSegment(record: Record<string, unknown>, fallbackId: string): RawTra
   return {
     ...optional('id', pickString(record, ['id', 'segmentid']) ?? fallbackId),
     ...optional('mode', normalizeSourceMode(pickString(record, ['mode', 'transport', 'type']))),
-    ...optional('operator', pickString(record, ['operator', 'carrier'])),
+    ...optional('operator', pickOperator(record, ['operator', 'carrier'])),
     ...optional('departurePlace', mapPlace(pick(record, DEPARTURE_PLACE))),
     ...optional('departureAt', pickString(record, DEPARTURE_AT)),
     ...optional('arrivalPlace', mapPlace(pick(record, ARRIVAL_PLACE))),
@@ -218,6 +277,7 @@ function mapHotelOffer(
   index: number,
 ): RawHotelOffer {
   const place = mapPlace(pick(record, PLACE_ALIASES)) ?? mapPlace(record);
+  const hotelMoney = pickMoney(record, PRICE_AMOUNT);
 
   return {
     ...optional('id', pickString(record, ['id', 'hotelid', 'uid']) ?? `mcp:h:${index}`),
@@ -226,9 +286,9 @@ function mapHotelOffer(
     ...optional('checkIn', pickString(record, ['checkin', 'checkindate']) ?? checkIn),
     ...optional('checkOut', pickString(record, ['checkout', 'checkoutdate']) ?? checkOut),
     ...optional('nights', pickNumber(record, ['nights', 'ночей'])),
-    ...optional('priceAmount', pickNumber(record, PRICE_AMOUNT)),
+    ...optional('priceAmount', hotelMoney.amount),
     ...optional('pricePerNightAmount', pickNumber(record, PRICE_PER_NIGHT)),
-    ...optional('currency', pickString(record, ['currency', 'валюта'])),
+    ...optional('currency', hotelMoney.currency),
     ...optional('rating', pickNumber(record, ['rating', 'stars', 'score', 'рейтинг'])),
     ...optional(
       'reviewSummaryText',

@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { mapHotelOffers, mapTransportOffers } from './map-offers';
+import multitransport from './__fixtures__/tutu-multitransport.json' with { type: 'json' };
 
 describe('mapTransportOffers', () => {
   it('читает известные псевдонимы и не выдумывает отсутствующие поля', () => {
@@ -134,5 +135,46 @@ describe('нормализация словаря видов транспорт�
     );
 
     expect(offer?.segments?.[0]?.mode).toBe('train');
+  });
+});
+
+/**
+ * Фикстура — реальный ответ `search_multitransport` (Москва → СПб, 2026-09-05),
+ * усечённый до трёх вариантов. Проверяем именно те поля, которые терялись на живом MCP.
+ */
+describe('реальный payload search_multitransport', () => {
+  const offers = mapTransportOffers(multitransport, 'outbound');
+
+  it('читает цену из вложенного объекта price', () => {
+    expect(offers[0]?.priceAmount).toBe(1620.82);
+    expect(offers[0]?.currency).toBe('RUB');
+    expect(offers.every((offer) => typeof offer.priceAmount === 'number')).toBe(true);
+  });
+
+  it('читает duration_min, carriers и segments_count', () => {
+    expect(offers[0]).toMatchObject({
+      id: '255d7ca003ba8a6908ba4bd5468fb0ad',
+      mode: 'train',
+      operator: 'ФПК',
+      durationMinutes: 320,
+      departureAt: '2026-09-05T17:45:00+03:00',
+      arrivalAt: '2026-09-05T23:05:00+03:00',
+      // segments_count = 1 → пересадок 0.
+      transferCount: 0,
+    });
+    expect(offers[1]?.operator).toBe('Пальмира');
+  });
+
+  it('разворачивает legs[].segments[] так, что число сегментов совпадает с segments_count', () => {
+    const raw = (multitransport as { variants: { segments_count: number }[] }).variants;
+    offers.forEach((offer, index) => {
+      expect(offer.segments?.length).toBe(raw[index]?.segments_count);
+    });
+  });
+
+  it('переносит места и ссылку на оформление', () => {
+    expect(offers[0]?.departurePlace?.name).toContain('Москва');
+    expect(offers[0]?.arrivalPlace?.name).toContain('Санкт-Петербург');
+    expect(offers[0]?.checkoutUrl).toContain('tutu.ru');
   });
 });
