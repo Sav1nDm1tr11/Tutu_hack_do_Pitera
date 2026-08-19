@@ -5,7 +5,7 @@ type Variant = 'primary' | 'secondary' | 'ghost' | 'danger';
 type Size = 'sm' | 'md' | 'lg';
 
 const VARIANTS: Record<Variant, string> = {
-  primary: 'bg-navy text-white hover:bg-[#1a1889] active:bg-[#0d0c55]',
+  primary: 'bg-orange text-white hover:bg-[#a93218] active:bg-[#912913]',
   secondary: 'bg-white text-navy border border-line hover:bg-surface',
   ghost: 'bg-transparent text-navy hover:bg-info-soft',
   danger: 'bg-danger text-white hover:bg-[#a92f3d]',
@@ -36,7 +36,7 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(function Button
       // а зрячий пользователь не потеряет подпись кнопки.
       aria-busy={loading || undefined}
       className={cn(
-        'inline-flex items-center justify-center gap-2 font-medium transition-colors',
+        'inline-flex items-center justify-center gap-2 font-semibold transition-colors',
         'disabled:cursor-not-allowed disabled:opacity-50',
         VARIANTS[variant],
         SIZES[size],

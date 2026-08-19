@@ -2,7 +2,7 @@
 # Один контейнер: собранный PWA раздаётся Fastify вместе с API.
 FROM node:22-alpine AS build
 
-RUN corepack enable && corepack prepare pnpm@10.34.5 --activate
+RUN corepack enable && corepack prepare pnpm@11.19.0 --activate
 WORKDIR /app
 
 COPY pnpm-workspace.yaml package.json pnpm-lock.yaml ./
@@ -18,7 +18,7 @@ RUN pnpm --filter @tutu-plan-b/web build
 
 FROM node:22-alpine AS runtime
 
-RUN corepack enable && corepack prepare pnpm@10.34.5 --activate
+RUN corepack enable && corepack prepare pnpm@11.19.0 --activate
 WORKDIR /app
 ENV NODE_ENV=production
 ENV HOST=0.0.0.0

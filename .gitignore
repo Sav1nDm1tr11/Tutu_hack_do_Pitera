@@ -27,3 +27,8 @@ pnpm-debug.log*
 tmp/
 .vite/
 dev-dist/
+
+# Локальные артефакты сборки и дизайн-ревью
+.deploy/
+.impeccable/questions/
+.impeccable/review/

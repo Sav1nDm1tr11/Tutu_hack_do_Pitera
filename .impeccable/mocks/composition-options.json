@@ -1,0 +1,44 @@
+{
+  "title": "Выберите композицию экрана плана",
+  "question": "Визуальный мир уже зафиксирован. Теперь выберите, как планета, конфигурации, этапы и сводка должны делить первый экран.",
+  "followup": true,
+  "options": [
+    {
+      "id": "wayfinding-balanced",
+      "label": "Навигационный баланс",
+      "kicker": "ВАРИАНТ 1",
+      "lineage": "выбранный direction comp",
+      "thesis": "Планета в центре, режимы слева, сводка справа и непрерывная линия этапов снизу.",
+      "palette": ["#F8FBFF", "#0B1537", "#0968F2", "#6B36F5", "#FF5C49", "#FFCE43"],
+      "materials": ["wayfinding plates", "route line", "illustrated globe"],
+      "viewport": "Самая симметричная композиция: четыре рабочие зоны окружают планету, не перекрывая её.",
+      "risk": "Много зон первого уровня; на mobile их придётся строго превратить в последовательность.",
+      "comp": ".impeccable/mocks/decision/model-pick.png"
+    },
+    {
+      "id": "wayfinding-top-deck",
+      "label": "Верхняя палуба",
+      "kicker": "ВАРИАНТ 2",
+      "lineage": "top control deck",
+      "thesis": "Все главные решения собраны над планетой, а маршрут читается как одна световая линия внизу.",
+      "palette": ["#F8FBFF", "#0B1537", "#0968F2", "#6B36F5", "#FF5C49", "#FFCE43"],
+      "materials": ["wayfinding plates", "numbered corridor", "illustrated globe"],
+      "viewport": "Редактирование маршрута и три конфигурации находятся сверху; справа только сводка, снизу — непрерывный коридор этапов с веткой План Б.",
+      "risk": "Нижний маршрутный коридор плотный и требует аккуратного горизонтального поведения на небольшом desktop.",
+      "comp": ".impeccable/mocks/wayfinding-top-deck.png"
+    },
+    {
+      "id": "wayfinding-vertical",
+      "label": "Вертикальный театр поездки",
+      "kicker": "ВАРИАНТ 3",
+      "lineage": "vertical journey theater",
+      "thesis": "Планета становится сценой: конфигурации стоят слева, этапы идут сверху вниз справа, итог закреплён снизу.",
+      "palette": ["#F8FBFF", "#0B1537", "#0968F2", "#6B36F5", "#FF5C49", "#FFCE43"],
+      "materials": ["wayfinding masts", "stage plates", "illustrated globe"],
+      "viewport": "Самая крупная планета и самая ясная причинная связь: выбор этапа справа подсвечивает точку и дугу в центре.",
+      "risk": "Вертикальная лента этапов может потребовать прокрутки на коротких ноутбуках, поэтому детали нужно раскрывать по запросу.",
+      "comp": ".impeccable/mocks/wayfinding-vertical-theater.png"
+    }
+  ],
+  "steer": true
+}

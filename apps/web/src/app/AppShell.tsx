@@ -1,6 +1,7 @@
 import { NavLink, Outlet } from 'react-router';
 import { useEffect, useState } from 'react';
 import { Badge } from '../components/ui/Badge';
+import { BrandMark } from '../components/brand/BrandMark';
 import { fetchCapabilities } from '../lib/api-client';
 import { useOnlineStatus } from '../lib/use-online-status';
 import { usePlanStore } from '../store/plan-store';
@@ -22,25 +23,28 @@ export function AppShell(): React.JSX.Element {
   }, []);
 
   return (
-    <div className="flex min-h-dvh flex-col">
+    <div className="app-shell flex min-h-dvh flex-col">
       <a
         href="#main"
-        className="visually-hidden focus:not-sr-only focus:absolute focus:top-2 focus:left-2 focus:z-50 focus:rounded-lg focus:bg-navy focus:px-3 focus:py-2 focus:text-white"
+        className="visually-hidden focus:bg-navy focus:not-sr-only focus:absolute focus:top-2 focus:left-2 focus:z-50 focus:rounded-lg focus:px-3 focus:py-2 focus:text-white"
       >
         Перейти к основному содержимому
       </a>
 
-      <header className="sticky top-0 z-30 border-b border-line bg-surface/90 backdrop-blur">
-        <div className="mx-auto flex w-full max-w-6xl items-center gap-3 px-4 py-3">
-          <NavLink to="/" className="flex items-center gap-2 font-semibold text-navy">
-            <Logo />
-            ТуТу План Б
+      <header className="app-header sticky top-0 z-30">
+        <div className="mx-auto flex w-full max-w-[1480px] items-center gap-3 px-4 py-3 sm:px-6">
+          <NavLink to="/" className="brand-link" aria-label="Туту План Б — на главную">
+            <BrandMark />
           </NavLink>
 
           <div className="ml-auto flex items-center gap-2">
             {/* Демо-режим виден постоянно (§11.1): подменять источник данных молча нельзя. */}
             {source === 'fixture' && (
-              <Badge tone="warning" icon={<FlaskIcon />} title="Live Tutu MCP недоступен из этой среды">
+              <Badge
+                tone="warning"
+                icon={<FlaskIcon />}
+                title="Live Tutu MCP недоступен из этой среды"
+              >
                 Демо-данные
               </Badge>
             )}
@@ -51,7 +55,7 @@ export function AppShell(): React.JSX.Element {
             )}
             <NavLink
               to="/about-data"
-              className="tap-target grid place-items-center rounded-full px-3 text-sm text-muted hover:text-navy"
+              className="header-link tap-target text-navy grid place-items-center px-3 text-sm font-semibold"
             >
               О данных
             </NavLink>
@@ -59,7 +63,7 @@ export function AppShell(): React.JSX.Element {
         </div>
       </header>
 
-      <main id="main" className="mx-auto w-full max-w-6xl flex-1 px-4 py-5">
+      <main id="main" className="mx-auto w-full max-w-[1480px] flex-1 px-4 py-5 sm:px-6 lg:py-7">
         <Outlet />
       </main>
 
@@ -68,21 +72,6 @@ export function AppShell(): React.JSX.Element {
         {announcement}
       </div>
     </div>
-  );
-}
-
-function Logo(): React.JSX.Element {
-  return (
-    <svg viewBox="0 0 24 24" className="size-6" fill="none" aria-hidden="true">
-      <circle cx="12" cy="12" r="9.2" stroke="currentColor" strokeWidth="1.6" />
-      <path
-        d="M3.4 10.2h17.2M5 16h14M12 2.9c2.6 2.6 2.6 15.6 0 18.2M12 2.9c-2.6 2.6-2.6 15.6 0 18.2"
-        stroke="currentColor"
-        strokeWidth="1.2"
-        opacity="0.6"
-      />
-      <path d="M4.6 15.2l14-7.4" stroke="#ed6436" strokeWidth="2" strokeLinecap="round" />
-    </svg>
   );
 }
 

@@ -45,9 +45,9 @@ export function SearchForm({ onSubmit, submitting }: SearchFormProps): React.JSX
       onSubmit={form.handleSubmit((values) => {
         onSubmit(toTravelRequest(values, `req_${crypto.randomUUID()}`));
       })}
-      className="flex flex-col gap-5"
+      className="search-form flex flex-col gap-5"
     >
-      <div className="grid gap-4 sm:grid-cols-2">
+      <div className="search-form__route grid gap-3 sm:grid-cols-2">
         <Controller
           control={form.control}
           name="origin"
@@ -76,8 +76,8 @@ export function SearchForm({ onSubmit, submitting }: SearchFormProps): React.JSX
         />
       </div>
 
-      <fieldset className="flex flex-col gap-2">
-        <legend className="mb-1 text-sm font-medium text-ink">Тип поездки</legend>
+      <fieldset className="search-form__trip-type flex flex-col gap-2">
+        <legend className="text-ink mb-1 text-sm font-medium">Тип поездки</legend>
         <div className="flex gap-2">
           {(
             [
@@ -87,7 +87,7 @@ export function SearchForm({ onSubmit, submitting }: SearchFormProps): React.JSX
           ).map((option) => (
             <label
               key={option.value}
-              className="tap-target flex flex-1 cursor-pointer items-center justify-center gap-2 rounded-[14px] border border-line bg-white px-3 text-[15px] has-checked:border-violet has-checked:bg-info-soft has-checked:font-medium has-checked:text-navy"
+              className="trip-type-option tap-target flex flex-1 cursor-pointer items-center justify-center gap-2 px-3 text-[15px] has-checked:font-semibold"
             >
               <input
                 type="radio"
@@ -101,23 +101,33 @@ export function SearchForm({ onSubmit, submitting }: SearchFormProps): React.JSX
         </div>
       </fieldset>
 
-      <div className="grid gap-4 sm:grid-cols-2">
+      <div className="search-form__dates grid gap-3 sm:grid-cols-2">
         <Field label="Дата отправления" error={errors.departDate?.message}>
           {(props) => (
-            <input type="date" className={inputClassName} {...props} {...form.register('departDate')} />
+            <input
+              type="date"
+              className={inputClassName}
+              {...props}
+              {...form.register('departDate')}
+            />
           )}
         </Field>
 
         {tripType === 'roundTrip' && (
           <Field label="Дата возвращения" error={errors.returnDate?.message}>
             {(props) => (
-              <input type="date" className={inputClassName} {...props} {...form.register('returnDate')} />
+              <input
+                type="date"
+                className={inputClassName}
+                {...props}
+                {...form.register('returnDate')}
+              />
             )}
           </Field>
         )}
       </div>
 
-      <div className="grid gap-4 sm:grid-cols-3">
+      <div className="search-form__numbers grid gap-3 sm:grid-cols-3">
         <Field label="Взрослых" error={errors.adults?.message}>
           {(props) => (
             <input
@@ -185,12 +195,12 @@ export function SearchForm({ onSubmit, submitting }: SearchFormProps): React.JSX
         </Field>
       )}
 
-      <div className="rounded-[20px] border border-line bg-white/60">
+      <div className="advanced-panel">
         <button
           type="button"
           onClick={() => setAdvancedOpen((open) => !open)}
           aria-expanded={advancedOpen}
-          className="tap-target flex w-full items-center justify-between gap-2 px-4 text-left text-[15px] font-medium text-navy"
+          className="tap-target text-navy flex w-full items-center justify-between gap-2 px-4 text-left text-[15px] font-semibold"
         >
           Что важно в поездке?
           <svg
@@ -208,7 +218,7 @@ export function SearchForm({ onSubmit, submitting }: SearchFormProps): React.JSX
         </button>
 
         {advancedOpen && (
-          <div className="flex flex-col gap-4 border-t border-line px-4 py-4">
+          <div className="border-line flex flex-col gap-4 border-t px-4 py-4">
             <ConstraintChips form={form} />
 
             <Field
@@ -229,14 +239,19 @@ export function SearchForm({ onSubmit, submitting }: SearchFormProps): React.JSX
         )}
       </div>
 
-      <Button type="submit" size="lg" loading={submitting} className="w-full sm:w-auto sm:self-start">
-        Собрать маршрут
+      <Button
+        type="submit"
+        size="lg"
+        loading={submitting}
+        className="search-submit w-full sm:w-auto sm:self-start"
+      >
+        Собрать устойчивый маршрут
       </Button>
 
       {/* Сводка ошибок появляется только после попытки отправки: заранее показанный
           список претензий к незаполненной форме бесполезен. */}
       {form.formState.isSubmitted && Object.keys(errors).length > 0 && (
-        <p role="alert" className="text-sm font-medium text-danger">
+        <p role="alert" className="text-danger text-sm font-medium">
           Проверьте выделенные поля — запрос не отправлен.
         </p>
       )}

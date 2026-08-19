@@ -1,4 +1,5 @@
 import { StrictMode } from 'react';
+import '@fontsource-variable/manrope';
 import { createRoot } from 'react-dom/client';
 import { BrowserRouter, Route, Routes } from 'react-router';
 import { AppShell } from './app/AppShell';

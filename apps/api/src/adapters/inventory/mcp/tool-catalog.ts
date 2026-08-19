@@ -48,6 +48,9 @@ const SEARCH_INTENT = [
   'найти',
   'расписан',
   'варианты',
+  'review',
+  'reviews',
+  'отзыв',
 ] as const;
 
 /**
@@ -152,8 +155,16 @@ export function buildToolCatalog(tools: readonly DiscoveredTool[]): ToolCatalog 
   const used = new Set<string>();
 
   for (const matcher of MATCHERS) {
-    const candidates = allowed
-      .filter((tool) => scoreTool(tool, matcher) > 0)
+    const scored = allowed.filter((tool) => scoreTool(tool, matcher) > 0);
+
+    // Категорию инвентаря обслуживает поиск, а не карточка отзывов. Если поисковый tool
+    // для категории есть, остальные кандидаты выбывают ДО сравнения счёта: описание
+    // `hotel_reviews` содержит и «отель», и «отзыв», поэтому по очкам обгоняло
+    // `search_hotels` и уводило категорию в tool, который инвентарь не отдаёт.
+    const searchOnly = scored.filter((tool) => tool.name.toLowerCase().includes('search'));
+    const pool = matcher.prefersSearchTool && searchOnly.length > 0 ? searchOnly : scored;
+
+    const candidates = pool
       // Сортировка по (счёт, имя) делает выбор воспроизводимым: два прогона discovery с
       // одинаковым ответом сервера обязаны дать одинаковый маппинг.
       .sort((left, right) => {

@@ -24,12 +24,11 @@ describe('buildToolCatalog', () => {
     expect(catalog.bindings.get('suburbanTrain')?.name).toBe('search_suburban_trains');
     expect(catalog.bindings.get('bus')?.name).toBe('search_buses');
     expect(catalog.bindings.get('hotel')?.name).toBe('search_hotels');
-    // `hotel_reviews` описан как справочник отзывов без поискового намерения, поэтому
-    // категория честно остаётся несопоставленной — с причиной, а не молча.
-    expect(catalog.bindings.get('hotelReviews')).toBeUndefined();
-    expect(catalog.reasons.get('hotelReviews')).toMatch(/не найден/i);
+    // Отзывы отдаёт отдельный tool, и это правильная привязка: инвентарь остаётся за
+    // поиском, а отзывы — за карточкой отзывов.
+    expect(catalog.bindings.get('hotelReviews')?.name).toBe('hotel_reviews');
     expect(catalog.forbidden).toEqual(['book_flight']);
-    expect(catalog.unmatched).toEqual(['city_info', 'hotel_reviews']);
+    expect(catalog.unmatched).toEqual(['city_info']);
   });
 
   it('не путает электрички с поездами дальнего следования', () => {

@@ -1,12 +1,14 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router';
 import { SearchForm } from '../features/search/SearchForm';
 import { PlanProgress } from '../features/plan/PlanProgress';
 import { Button } from '../components/ui/Button';
 import { usePlanStore } from '../store/plan-store';
 import { clearLastPlan, loadLastPlan } from '../lib/plan-storage';
+import { usePageIntro } from '../lib/use-page-intro';
 
 export function SearchScreen(): React.JSX.Element {
+  const screenRef = useRef<HTMLDivElement>(null);
   const navigate = useNavigate();
   const status = usePlanStore((state) => state.status);
   const phase = usePlanStore((state) => state.phase);
@@ -15,6 +17,7 @@ export function SearchScreen(): React.JSX.Element {
   const plan = usePlanStore((state) => state.plan);
   const startPlan = usePlanStore((state) => state.startPlan);
   const reset = usePlanStore((state) => state.reset);
+  usePageIntro(screenRef, [status]);
 
   useEffect(() => {
     if (status === 'ready' && plan !== undefined) {
@@ -24,7 +27,7 @@ export function SearchScreen(): React.JSX.Element {
 
   if (status === 'streaming') {
     return (
-      <div className="flex flex-col items-center gap-4 py-6">
+      <div ref={screenRef} className="search-progress flex flex-col items-center gap-4 py-6">
         <PlanProgress phase={phase} message={progressMessage} />
         <Button variant="ghost" onClick={reset}>
           Отменить поиск
@@ -34,32 +37,63 @@ export function SearchScreen(): React.JSX.Element {
   }
 
   return (
-    <div className="flex flex-col gap-6">
-      <section className="flex flex-col gap-2">
-        <h1 className="text-2xl font-semibold text-ink sm:text-3xl">
-          Проверьте план поездки до покупки
+    <div ref={screenRef} className="search-page">
+      <section className="search-intro" data-intro>
+        <h1>
+          Маршрут, который не развалится <span>от одного сбоя</span>
         </h1>
-        <p className="max-w-2xl text-[15px] text-muted">
-          Мы собираем маршрут целиком — дорога, проживание, обратный путь — и показываем, где он
-          ломается: тесные пересадки, ночные сегменты, этапы без замены. Для уязвимых мест готовим
-          план Б из вариантов, которые действительно есть в поиске.
+        <p>
+          Соберём поездку целиком, стресс-тестируем пересадки и заранее найдём реальные замены для
+          уязвимых этапов.
         </p>
       </section>
 
       {error !== undefined && (
-        <div role="alert" className="card-surface flex flex-col gap-3 p-4">
-          <p className="text-sm font-medium text-danger">{error.message}</p>
+        <div role="alert" className="route-alert flex flex-col gap-3 p-4" data-intro>
+          <p className="text-danger text-sm font-medium">{error.message}</p>
           {error.retryable && (
-            <p className="text-sm text-muted">Условия поиска сохранены — можно повторить запрос.</p>
+            <p className="text-muted text-sm">Условия поиска сохранены — можно повторить запрос.</p>
           )}
         </div>
       )}
 
-      <section className="card-surface p-5 sm:p-6">
-        <SearchForm onSubmit={startPlan} submitting={false} />
-      </section>
+      <div className="search-stage">
+        <section className="search-console" data-intro>
+          <div className="search-console-head">
+            <div>
+              <h2>Куда строим путь?</h2>
+              <p>Укажите поездку — риски и запасные варианты посчитаем сами.</p>
+            </div>
+            <span className="search-console-status">Стресс-тест включён</span>
+          </div>
+          <SearchForm onSubmit={startPlan} submitting={false} />
+        </section>
 
-      <RestoreLastPlan />
+        <aside className="search-planet" aria-hidden="true" data-intro>
+          <RoutePreview />
+          <p>Собираем транспорт, жильё и План Б в одну живую схему.</p>
+        </aside>
+      </div>
+
+      <div data-intro>
+        <RestoreLastPlan />
+      </div>
+    </div>
+  );
+}
+
+function RoutePreview(): React.JSX.Element {
+  return (
+    <div className="preview-orbit">
+      <div className="preview-planet">
+        <span className="preview-land preview-land-one" />
+        <span className="preview-land preview-land-two" />
+        <span className="preview-route" />
+        <span className="preview-point preview-point-a" />
+        <span className="preview-point preview-point-b" />
+      </div>
+      <span className="preview-badge preview-badge-train">Поезд</span>
+      <span className="preview-badge preview-badge-plan">План Б готов</span>
     </div>
   );
 }
@@ -87,9 +121,9 @@ function RestoreLastPlan(): React.JSX.Element | null {
   if (saved === undefined) return null;
 
   return (
-    <section className="flex flex-col gap-2 rounded-[20px] border border-line bg-white/60 p-4">
-      <p className="text-sm font-medium text-ink">У вас есть сохранённая поездка</p>
-      <p className="text-xs text-muted">
+    <section className="saved-trip">
+      <p className="text-ink text-sm font-medium">У вас есть сохранённая поездка</p>
+      <p className="text-muted text-xs">
         Данные могут быть устаревшими — перед оформлением проверьте актуальность.
       </p>
       <div className="flex flex-wrap gap-2 pt-1">

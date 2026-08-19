@@ -36,13 +36,13 @@ export function PlanProgress({ phase, message }: PlanProgressProps): React.JSX.E
   const currentIndex = phase === undefined ? 0 : PHASE_ORDER.indexOf(phase);
 
   return (
-    <section className="card-surface mx-auto flex w-full max-w-xl flex-col gap-4 p-6">
+    <section className="progress-board mx-auto flex w-full max-w-3xl flex-col gap-5 p-6" data-intro>
       <div className="flex flex-col gap-1">
-        <h2 className="text-lg font-semibold text-ink">Собираем маршрут</h2>
-        <p className="text-sm text-muted">{message ?? 'Начинаем поиск'}</p>
+        <h2 className="text-navy text-xl font-extrabold">Собираем маршрут</h2>
+        <p className="text-muted text-sm">{message ?? 'Начинаем поиск'}</p>
       </div>
 
-      <ol className="flex flex-col gap-2">
+      <ol className="progress-phases flex flex-col gap-2">
         {PHASE_ORDER.map((item, index) => {
           const done = index < currentIndex;
           const active = index === currentIndex;
@@ -53,10 +53,10 @@ export function PlanProgress({ phase, message }: PlanProgressProps): React.JSX.E
                 aria-hidden="true"
                 className={
                   done
-                    ? 'grid size-5 shrink-0 place-items-center rounded-full bg-success text-white'
+                    ? 'bg-success grid size-5 shrink-0 place-items-center rounded-full text-white'
                     : active
-                      ? 'size-5 shrink-0 rounded-full border-2 border-violet bg-info-soft'
-                      : 'size-5 shrink-0 rounded-full border-2 border-line'
+                      ? 'border-violet bg-info-soft size-5 shrink-0 rounded-full border-2'
+                      : 'border-line size-5 shrink-0 rounded-full border-2'
                 }
               >
                 {done && (
@@ -73,9 +73,7 @@ export function PlanProgress({ phase, message }: PlanProgressProps): React.JSX.E
               </span>
 
               <span
-                className={
-                  active ? 'text-[15px] font-medium text-ink' : 'text-[15px] text-muted'
-                }
+                className={active ? 'text-ink text-[15px] font-medium' : 'text-muted text-[15px]'}
               >
                 {PHASE_TITLES[item]}
               </span>

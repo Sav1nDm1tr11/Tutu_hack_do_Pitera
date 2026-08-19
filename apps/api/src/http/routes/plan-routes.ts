@@ -34,6 +34,10 @@ export async function registerPlanRoutes(
       });
     }
 
+    // hijack: Fastify больше не закрывает ответ сам. Без этого `return reply` после
+    // записи в `reply.raw` конфликтует с жизненным циклом фреймворка.
+    reply.hijack();
+
     // NDJSON, а не SSE: события структурные и однонаправленные, а построчный JSON
     // одинаково просто читается и fetch-стримом, и curl при отладке (§13.1).
     reply.raw.writeHead(200, {
@@ -45,23 +49,26 @@ export async function registerPlanRoutes(
     });
 
     let clientGone = false;
-    const onClose = (): void => {
-      clientGone = true;
+    /**
+     * Обрыв смотрим на **ответе**, а не на запросе.
+     *
+     * `request.raw` уже дочитан к моменту хендлера (тело JSON разобрано Fastify),
+     * и Node эмитит на нём `close`. Если слушать его, цикл выходит до первой записи —
+     * клиент получает HTTP 200 и 0 байт, UI показывает «Соединение прервалось».
+     */
+    const onResponseClose = (): void => {
+      if (!reply.raw.writableEnded) clientGone = true;
     };
-    // Слушаем именно ответ: Node ≥16 эмитит `close` на IncomingMessage сразу после того,
-    // как тело запроса дочитано, поэтому подписка на `request.raw` обрывала бы поток до
-    // первой итерации. `close` на response означает настоящий разрыв соединения.
-    reply.raw.on('close', onClose);
+    reply.raw.on('close', onResponseClose);
 
     try {
       for await (const event of deps.orchestrator.createPlanStream(parsed.data)) {
-        // Клиент ушёл — продолжать расчёт незачем, генератор закроется по выходу из цикла.
         if (clientGone) break;
         reply.raw.write(`${JSON.stringify(event)}\n`);
       }
     } catch (error) {
       app.log.error({ err: error }, 'Поток плана прервался');
-      if (!clientGone) {
+      if (!clientGone && !reply.raw.writableEnded) {
         const event: PlanStreamEvent = {
           type: 'plan.error',
           code: 'INTERNAL_ERROR',
@@ -71,11 +78,9 @@ export async function registerPlanRoutes(
         reply.raw.write(`${JSON.stringify(event)}\n`);
       }
     } finally {
-      reply.raw.off('close', onClose);
-      reply.raw.end();
+      reply.raw.off('close', onResponseClose);
+      if (!reply.raw.writableEnded) reply.raw.end();
     }
-
-    return reply;
   });
 
   app.get('/api/plan/:planId', async (request, reply) => {

@@ -4,7 +4,7 @@
   "private": true,
   "description": "«ТуТу План Б» — PWA, которая стресс-тестирует маршрут до покупки и заранее собирает план Б",
   "type": "module",
-  "packageManager": "pnpm@10.34.5",
+  "packageManager": "pnpm@11.19.0",
   "engines": {
     "node": ">=22.12.0"
   },

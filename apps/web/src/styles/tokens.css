@@ -1,56 +1,41 @@
-/**
- * Токены оформления (§6.6).
- *
- * Палитра — черновая и подлежит проверке по материалам хакатона перед финальной
- * полировкой. Важнее другое правило, зашитое в структуру токенов: цвет никогда не
- * единственный носитель смысла (§19), поэтому у каждого статусного цвета есть парный
- * `-soft` для фона и рядом всегда стоят текст и иконка.
- */
 :root {
-  --color-brand-navy: #11106b;
-  --color-brand-violet: #7868ee;
-  --color-brand-orange: #ed6436;
-
-  --color-surface: #f7f7ff;
+  --color-brand-navy: #171255;
+  --color-brand-blue: #1167f2;
+  --color-brand-violet: #6d48e5;
+  --color-brand-coral: #ff5f3b;
+  --color-brand-orange: #c63d21;
+  --color-surface: #edf6ff;
   --color-card: #ffffff;
-  --color-text: #15133f;
-  --color-muted: #686783;
-  --color-border: #e3e2f2;
-
-  --color-success: #197a55;
-  --color-success-soft: #e6f4ee;
-  --color-warning: #c06a00;
-  --color-warning-soft: #fdf1e0;
-  --color-danger: #c33b4a;
-  --color-danger-soft: #fdecee;
-  --color-info-soft: #eeecff;
-
-  --radius-card: 24px;
-  --radius-control: 14px;
+  --color-text: #17152f;
+  --color-muted: #5e6682;
+  --color-border: #d9e2f1;
+  --color-ocean: #6cc8ed;
+  --color-land: #d8ef9d;
+  --color-success: #117856;
+  --color-success-soft: #e2f7ec;
+  --color-warning: #9a5900;
+  --color-warning-soft: #fff1ce;
+  --color-danger: #bc3346;
+  --color-danger-soft: #ffe7ea;
+  --color-info-soft: #ece8ff;
+  --radius-card: 16px;
+  --radius-control: 12px;
   --radius-pill: 999px;
-
-  --shadow-card: 0 18px 50px rgb(17 16 107 / 0.12);
+  --shadow-card: 0 22px 54px rgb(40 58 107 / 0.13), 0 3px 10px rgb(40 58 107 / 0.06);
+  --shadow-float: 0 18px 42px rgb(43 57 105 / 0.18), 0 4px 12px rgb(43 57 105 / 0.08);
   --shadow-sheet: 0 -12px 40px rgb(17 16 107 / 0.18);
-  --shadow-focus: 0 0 0 3px rgb(120 104 238 / 0.35);
-
-  /* Длительности анимаций из §6.7. Держим их токенами, чтобы reduced-motion мог
-     обнулить всё разом, а не по компонентам. */
-  --duration-micro: 150ms;
-  --duration-card: 260ms;
+  --shadow-focus: 0 0 0 4px rgb(17 103 242 / 0.23);
+  --duration-micro: 160ms;
+  --duration-card: 320ms;
   --duration-camera: 640ms;
-  --ease-out: cubic-bezier(0.22, 0.61, 0.36, 1);
-
-  /* Геометрия глобуса на мобильном (§6.3): высота в пределах 220–280 px. */
-  --globe-height-mobile: 248px;
-
-  --font-sans:
-    'Inter', 'Segoe UI', system-ui, -apple-system, 'Helvetica Neue', Arial, sans-serif;
-  --font-numeric: 'Inter', 'Segoe UI', system-ui, sans-serif;
+  --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+  --globe-height-mobile: 264px;
+  --font-sans: 'Manrope Variable', 'Manrope', sans-serif;
+  --font-numeric: 'Manrope Variable', 'Manrope', sans-serif;
 }
 
 @media (prefers-reduced-motion: reduce) {
   :root {
-    /* §19 требует именно отключения движения, а не его ускорения. */
     --duration-micro: 0ms;
     --duration-card: 0ms;
     --duration-camera: 0ms;

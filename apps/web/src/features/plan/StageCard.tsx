@@ -24,6 +24,7 @@ import { Badge, type BadgeTone } from '../../components/ui/Badge';
 import { Button } from '../../components/ui/Button';
 import { cn } from '../../lib/cn';
 import { FreshnessBadge } from './FreshnessBadge';
+import { TransportIcon, type TransportIconMode } from '../../components/brand/TransportIcon';
 
 const MODE_LABELS: Record<TransportOption['mode'], string> = {
   flight: 'Самолёт',
@@ -87,17 +88,22 @@ export function StageCard({
   return (
     <li
       className={cn(
-        'card-surface relative flex flex-col gap-3 p-4 transition-colors',
-        selected && 'border-violet ring-2 ring-violet/30',
+        'route-stage-card relative flex flex-col gap-3 p-4 transition-colors',
+        selected && 'route-stage-card--selected',
         busy && 'opacity-60',
       )}
       style={{ transitionDuration: 'var(--duration-card)' }}
       aria-current={selected ? 'step' : undefined}
     >
       <div className="flex items-start justify-between gap-3">
-        <div className="min-w-0">
-          <h3 className="text-[15px] font-semibold text-ink">{stage.title}</h3>
-          {option !== undefined && <Subtitle option={option} />}
+        <div className="flex min-w-0 items-start gap-3">
+          <span className="stage-mode-icon">
+            <TransportIcon mode={iconMode(option)} />
+          </span>
+          <div className="min-w-0">
+            <h3 className="text-navy text-[15px] font-extrabold">{stage.title}</h3>
+            {option !== undefined && <Subtitle option={option} />}
+          </div>
         </div>
 
         {stage.temporarilyUnavailable ? (
@@ -117,11 +123,11 @@ export function StageCard({
       </div>
 
       {stage.temporarilyUnavailable ? (
-        <p className="text-sm text-muted">
+        <p className="text-muted text-sm">
           Категория недоступна в этом поиске. Остальной маршрут собран и остаётся в силе.
         </p>
       ) : option === undefined ? (
-        <p className="text-sm text-muted">нет данных</p>
+        <p className="text-muted text-sm">нет данных</p>
       ) : isTransportOption(option) ? (
         <TransportBody option={option} freshness={freshness} />
       ) : isHotelOption(option) ? (
@@ -150,7 +156,8 @@ export function StageCard({
 
           {alternativesCount > 0 && (
             <Button size="sm" variant="ghost" onClick={onOpenAlternatives}>
-              {alternativesCount} {pluralizeRu(alternativesCount, 'вариант', 'варианта', 'вариантов')}
+              {alternativesCount}{' '}
+              {pluralizeRu(alternativesCount, 'вариант', 'варианта', 'вариантов')}
             </Button>
           )}
 
@@ -165,16 +172,23 @@ export function StageCard({
   );
 }
 
+function iconMode(option: CandidateOption | undefined): TransportIconMode {
+  if (option === undefined) return 'train';
+  if (isHotelOption(option)) return 'hotel';
+  if (isTransportOption(option)) return option.mode;
+  return 'suburbanTrain';
+}
+
 function Subtitle({ option }: { readonly option: CandidateOption }): React.JSX.Element | null {
   if (isTransportOption(option)) {
     const parts = [MODE_LABELS[option.mode], option.operator].filter(
       (part): part is string => part !== undefined && part !== '',
     );
-    return <p className="mt-0.5 text-sm text-muted">{parts.join(' · ')}</p>;
+    return <p className="text-muted mt-0.5 text-sm">{parts.join(' · ')}</p>;
   }
 
   if (isHotelOption(option)) {
-    return <p className="mt-0.5 text-sm text-muted">{option.name}</p>;
+    return <p className="text-muted mt-0.5 text-sm">{option.name}</p>;
   }
 
   return null;
@@ -190,30 +204,28 @@ function TransportBody({
   return (
     <div className="flex flex-col gap-3">
       <div className="flex items-start gap-3">
-        <TimePoint
-          at={option.departure.at}
-          place={option.departure.place.name}
-          align="start"
-        />
+        <TimePoint at={option.departure.at} place={option.departure.place.name} align="start" />
         <div className="mt-2 flex min-w-0 flex-1 flex-col items-center gap-1">
-          <span className="text-xs text-muted tabular">{formatDuration(option.durationMinutes)}</span>
-          <span aria-hidden="true" className="h-px w-full bg-line" />
-          <span className="text-xs text-muted">{formatTransfers(option.transferCount)}</span>
+          <span className="text-muted tabular text-xs">
+            {formatDuration(option.durationMinutes)}
+          </span>
+          <span aria-hidden="true" className="bg-line h-px w-full" />
+          <span className="text-muted text-xs">{formatTransfers(option.transferCount)}</span>
         </div>
         <TimePoint at={option.arrival.at} place={option.arrival.place.name} align="end" />
       </div>
 
       <div className="flex flex-wrap items-baseline justify-between gap-2">
-        <p className="text-lg font-semibold text-ink tabular">{formatPrice(option.price)}</p>
+        <p className="text-ink tabular text-lg font-semibold">{formatPrice(option.price)}</p>
         {option.serviceClass !== undefined && (
-          <span className="text-sm text-muted">{option.serviceClass}</span>
+          <span className="text-muted text-sm">{option.serviceClass}</span>
         )}
       </div>
 
       {option.segments !== undefined && option.segments.length > 1 && (
-        <ol className="flex flex-col gap-1 border-l border-line pl-3">
+        <ol className="border-line flex flex-col gap-1 border-l pl-3">
           {option.segments.map((segment) => (
-            <li key={segment.id} className="text-xs text-muted">
+            <li key={segment.id} className="text-muted text-xs">
               {MODE_LABELS[segment.mode]}: {segment.departure.place.name} →{' '}
               {segment.arrival.place.name}, {formatWallClockTime(segment.departure.at)}–
               {formatWallClockTime(segment.arrival.at)}
@@ -236,34 +248,34 @@ function HotelBody({
 }): React.JSX.Element {
   return (
     <div className="flex flex-col gap-2">
-      <p className="text-sm text-muted">
+      <p className="text-muted text-sm">
         {formatWallClockDate(option.checkIn)} — {formatWallClockDate(option.checkOut)},{' '}
         {option.nights} {pluralizeRu(option.nights, 'ночь', 'ночи', 'ночей')}
       </p>
 
       <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
-        <p className="text-lg font-semibold text-ink tabular">{formatPrice(option.price)}</p>
+        <p className="text-ink tabular text-lg font-semibold">{formatPrice(option.price)}</p>
         {option.pricePerNight !== undefined && (
-          <span className="text-sm text-muted tabular">
+          <span className="text-muted tabular text-sm">
             {formatPrice(option.pricePerNight)} за ночь
           </span>
         )}
       </div>
 
       {option.rating !== undefined && (
-        <p className="text-sm text-ink">
-          Рейтинг <span className="font-semibold tabular">{option.rating.toFixed(1)}</span> из 10
+        <p className="text-ink text-sm">
+          Рейтинг <span className="tabular font-semibold">{option.rating.toFixed(1)}</span> из 10
         </p>
       )}
 
       {option.reviewSummary !== undefined && (
-        <p className="text-sm text-muted">{option.reviewSummary.text}</p>
+        <p className="text-muted text-sm">{option.reviewSummary.text}</p>
       )}
 
       {option.reviewRedFlags.length > 0 && (
         <ul className="flex flex-col gap-1">
           {option.reviewRedFlags.map((flag) => (
-            <li key={flag} className="flex items-start gap-1.5 text-sm text-warning">
+            <li key={flag} className="text-warning flex items-start gap-1.5 text-sm">
               <AlertIcon />
               <span>{flag}</span>
             </li>
@@ -272,7 +284,7 @@ function HotelBody({
       )}
 
       {option.distanceToCenterKm !== undefined && (
-        <p className="text-sm text-muted tabular">
+        <p className="text-muted tabular text-sm">
           {option.distanceToCenterKm.toFixed(1)} км до центра
         </p>
       )}
@@ -286,7 +298,7 @@ function CalculatedBody({ option }: { readonly option: CalculatedOption }): Reac
   return (
     <div className="flex flex-col gap-2">
       <div className="flex flex-wrap items-center gap-2">
-        <p className="text-[15px] font-medium text-ink tabular">
+        <p className="text-ink tabular text-[15px] font-medium">
           {formatDuration(option.durationMinutes)}
         </p>
         {/* §6.5: вычисленный блок всегда помечен — иначе он читался бы как данные из инвентаря. */}
@@ -296,14 +308,14 @@ function CalculatedBody({ option }: { readonly option: CalculatedOption }): Reac
       </div>
 
       {option.sameStation === false && (
-        <p className="text-sm text-warning">Переход между разными точками отправления</p>
+        <p className="text-warning text-sm">Переход между разными точками отправления</p>
       )}
       {option.sameStation === undefined && (
-        <p className="text-sm text-muted">Не удалось определить, меняется ли точка пересадки</p>
+        <p className="text-muted text-sm">Не удалось определить, меняется ли точка пересадки</p>
       )}
 
       {!option.bufferSatisfied && (
-        <p className="flex items-start gap-1.5 text-sm text-warning">
+        <p className="text-warning flex items-start gap-1.5 text-sm">
           <AlertIcon />
           <span>
             Запас меньше рекомендуемых {option.minimumBufferMinutes} мин — при задержке пересадка
@@ -334,7 +346,7 @@ function Checkout({
 
   if (!isCheckoutAllowedForFreshness(freshness)) {
     return (
-      <p className="text-sm text-muted">
+      <p className="text-muted text-sm">
         Оформление недоступно, пока данные не обновлены — цена могла измениться.
       </p>
     );
@@ -345,7 +357,7 @@ function Checkout({
       href={option.checkoutUrl}
       target="_blank"
       rel="noopener noreferrer"
-      className="tap-target inline-flex w-fit items-center gap-1.5 text-sm font-medium text-navy underline decoration-violet/40 underline-offset-4 hover:decoration-violet"
+      className="tap-target text-navy decoration-violet/40 hover:decoration-violet inline-flex w-fit items-center gap-1.5 text-sm font-medium underline underline-offset-4"
     >
       Перейти к оформлению на ТуТу
       <svg viewBox="0 0 16 16" className="size-3.5" fill="none" aria-hidden="true">
@@ -373,11 +385,11 @@ function TimePoint({
 }): React.JSX.Element {
   return (
     <div className={cn('flex min-w-0 flex-col', align === 'end' && 'items-end text-right')}>
-      <span className="text-lg leading-tight font-semibold text-ink tabular">
+      <span className="text-ink tabular text-lg leading-tight font-semibold">
         {formatWallClockTime(at)}
       </span>
-      <span className="text-xs text-muted">{formatWallClockDate(at)}</span>
-      <span className="mt-0.5 truncate text-sm text-ink">{place}</span>
+      <span className="text-muted text-xs">{formatWallClockDate(at)}</span>
+      <span className="text-ink mt-0.5 truncate text-sm">{place}</span>
     </div>
   );
 }
@@ -400,7 +412,12 @@ function CalcIcon(): React.JSX.Element {
   return (
     <svg viewBox="0 0 16 16" className="size-3.5" fill="none">
       <rect x="3" y="2" width="10" height="12" rx="2" stroke="currentColor" strokeWidth="1.4" />
-      <path d="M5.6 5.4h4.8M5.6 8.4h1.2M8 8.4h1.2M10.4 8.4h.01M5.6 11h1.2M8 11h3" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" />
+      <path
+        d="M5.6 5.4h4.8M5.6 8.4h1.2M8 8.4h1.2M10.4 8.4h.01M5.6 11h1.2M8 11h3"
+        stroke="currentColor"
+        strokeWidth="1.3"
+        strokeLinecap="round"
+      />
     </svg>
   );
 }
@@ -414,7 +431,12 @@ function ShieldIcon(): React.JSX.Element {
         strokeWidth="1.5"
         strokeLinejoin="round"
       />
-      <path d="M5.8 8l1.7 1.7 3-3.4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+      <path
+        d="M5.8 8l1.7 1.7 3-3.4"
+        stroke="currentColor"
+        strokeWidth="1.5"
+        strokeLinecap="round"
+      />
     </svg>
   );
 }

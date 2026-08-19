@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useMemo, useRef, useState } from 'react';
 import type { PlanConfiguration, RoutePlan } from '@tutu-plan-b/domain';
 import { FALLBACK_CAVEAT } from '@tutu-plan-b/domain';
 import { GlobePanel } from '../globe/GlobePanel';
@@ -8,6 +8,7 @@ import { PlanSummary } from './PlanSummary';
 import { PlanWarnings } from './PlanWarnings';
 import { StageCard } from './StageCard';
 import { usePlanStore } from '../../store/plan-store';
+import { usePageIntro } from '../../lib/use-page-intro';
 
 export interface PlanViewProps {
   readonly plan: RoutePlan;
@@ -20,6 +21,7 @@ type SheetState =
   | { readonly kind: 'fallback'; readonly stageId: string };
 
 export function PlanView({ plan, offline }: PlanViewProps): React.JSX.Element {
+  const pageRef = useRef<HTMLDivElement>(null);
   const activeConfigurationId = usePlanStore((state) => state.activeConfigurationId);
   const selectedStageId = usePlanStore((state) => state.selectedStageId);
   const swappingStageId = usePlanStore((state) => state.swappingStageId);
@@ -31,6 +33,7 @@ export function PlanView({ plan, offline }: PlanViewProps): React.JSX.Element {
 
   const configuration: PlanConfiguration | undefined =
     plan.configurations.find((item) => item.id === activeConfigurationId) ?? plan.configurations[0];
+  usePageIntro(pageRef);
 
   const fallbackByStageId = useMemo(() => {
     const map = new Map<string, readonly string[]>();
@@ -46,8 +49,8 @@ export function PlanView({ plan, offline }: PlanViewProps): React.JSX.Element {
     return (
       <section className="mx-auto flex w-full max-w-2xl flex-col gap-4">
         <div className="card-surface flex flex-col gap-3 p-6">
-          <h2 className="text-lg font-semibold text-ink">Подходящих вариантов не нашлось</h2>
-          <p className="text-sm text-muted">
+          <h2 className="text-ink text-lg font-semibold">Подходящих вариантов не нашлось</h2>
+          <p className="text-muted text-sm">
             Мы не показываем маршруты, которые нарушают ваши ограничения. Попробуйте ослабить одно
             из условий — например, увеличить бюджет или разрешить пересадку.
           </p>
@@ -63,36 +66,79 @@ export function PlanView({ plan, offline }: PlanViewProps): React.JSX.Element {
       : configuration.stages.find((stage) => stage.id === sheet.stageId);
 
   return (
-    <div className="flex flex-col gap-4 lg:grid lg:grid-cols-[1fr_400px] lg:items-start lg:gap-6">
+    <div ref={pageRef} className="plan-page">
+      <header className="plan-title" data-intro>
+        <div>
+          <h1>
+            {plan.request.origin.name} <span aria-hidden="true">→</span>{' '}
+            {plan.request.destination.name}
+          </h1>
+          <p>Маршрут собран, проверен на сбои и готов к сравнению.</p>
+        </div>
+        <span className="plan-revision">Версия {plan.revision + 1}</span>
+      </header>
+
       {/* На мобильном сводка липкая и стоит первой (§6.3): цена и оценка должны быть
           видны во время прокрутки этапов, иначе сравнение вариантов требует памяти. */}
-      <div className="sticky top-0 z-20 -mx-4 bg-surface/95 px-4 py-3 backdrop-blur lg:hidden">
+      <div
+        className="plan-mobile-summary sticky top-[65px] z-20 -mx-4 px-4 py-3 backdrop-blur lg:hidden"
+        data-intro
+      >
         <PlanSummary configuration={configuration} compact />
       </div>
 
-      <div className="flex min-w-0 flex-col gap-4">
-        <div
-          className="h-[var(--globe-height-mobile)] w-full lg:h-[min(45vh,460px)]"
-          style={{ contain: 'layout paint' }}
-        >
+      <div className="plan-hero-grid">
+        <aside className="configuration-zone" aria-label="Режим поездки" data-intro>
+          <div className="zone-heading">
+            <h2>Режим поездки</h2>
+            <p>Переключите приоритет — весь маршрут пересчитается.</p>
+          </div>
+          <ConfigurationSwitcher
+            configurations={plan.configurations}
+            activeId={configuration.id}
+            onChange={setActiveConfiguration}
+          />
+        </aside>
+
+        <div className="globe-zone" style={{ contain: 'layout paint' }} data-intro>
+          <div className="globe-zone__label">
+            <strong>Живая карта маршрута</strong>
+            <span>Нажмите на дугу или этап</span>
+          </div>
           <GlobePanel
             configuration={configuration}
             pool={plan.candidatePool}
             selectedStageId={selectedStageId}
-            onSelectStage={(stageId) => selectStage(stageId === selectedStageId ? undefined : stageId)}
+            onSelectStage={(stageId) =>
+              selectStage(stageId === selectedStageId ? undefined : stageId)
+            }
           />
         </div>
 
-        <ConfigurationSwitcher
-          configurations={plan.configurations}
-          activeId={configuration.id}
-          onChange={setActiveConfiguration}
-        />
+        <aside className="summary-zone" aria-label="Итог поездки" data-intro>
+          <div className="zone-heading">
+            <h2>Итог поездки</h2>
+            <p>Стоимость, время и запас прочности.</p>
+          </div>
+          <PlanSummary configuration={configuration} />
+        </aside>
+      </div>
 
+      <div data-intro>
         <Explanation configuration={configuration} />
+      </div>
+
+      <section id="route-stages" className="route-rail" data-intro>
+        <div className="route-rail__heading">
+          <div>
+            <h2>Маршрут по шагам</h2>
+            <p>Выберите этап, чтобы приблизить его на планете или заменить вариант.</p>
+          </div>
+          <span>{configuration.stages.length} этапов</span>
+        </div>
 
         {/* Этапы — семантически упорядоченный список (§19): порядок здесь несёт смысл. */}
-        <ol className="flex flex-col gap-3" aria-label="Этапы маршрута">
+        <ol className="route-stage-list" aria-label="Этапы маршрута">
           {configuration.stages.map((stage) => (
             <StageCard
               key={stage.id}
@@ -110,16 +156,11 @@ export function PlanView({ plan, offline }: PlanViewProps): React.JSX.Element {
             />
           ))}
         </ol>
+      </section>
 
+      <div data-intro>
         <PlanWarnings warnings={plan.warnings} />
       </div>
-
-      <aside className="hidden lg:sticky lg:top-4 lg:flex lg:flex-col lg:gap-4">
-        <div className="card-surface p-5">
-          <h2 className="mb-3 text-base font-semibold text-ink">Итог поездки</h2>
-          <PlanSummary configuration={configuration} />
-        </div>
-      </aside>
 
       {sheetStage !== undefined && (
         <OptionListSheet
@@ -163,13 +204,16 @@ function Explanation({
 
   return (
     <section className="card-surface flex flex-col gap-2.5 p-4">
-      <h2 className="text-[15px] font-semibold text-ink">{explanation.headline}</h2>
+      <h2 className="text-ink text-[15px] font-semibold">{explanation.headline}</h2>
 
       {explanation.bullets.length > 0 && (
         <ul className="flex flex-col gap-1.5">
           {explanation.bullets.map((bullet) => (
-            <li key={bullet.reasonCode} className="flex items-start gap-2 text-sm text-ink">
-              <span aria-hidden="true" className="mt-1.5 size-1.5 shrink-0 rounded-full bg-violet" />
+            <li key={bullet.reasonCode} className="text-ink flex items-start gap-2 text-sm">
+              <span
+                aria-hidden="true"
+                className="bg-violet mt-1.5 size-1.5 shrink-0 rounded-full"
+              />
               <span>{bullet.text}</span>
             </li>
           ))}
@@ -177,9 +221,9 @@ function Explanation({
       )}
 
       {explanation.caveats.length > 0 && (
-        <ul className="flex flex-col gap-1 border-t border-line pt-2">
+        <ul className="border-line flex flex-col gap-1 border-t pt-2">
           {explanation.caveats.map((caveat) => (
-            <li key={caveat} className="text-xs text-muted">
+            <li key={caveat} className="text-muted text-xs">
               {caveat}
             </li>
           ))}
