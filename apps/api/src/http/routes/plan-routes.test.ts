@@ -237,3 +237,31 @@ describe('метаданные', () => {
     expect(response.headers['x-frame-options']).toBe('DENY');
   });
 });
+
+/**
+ * Регрессия на «поток отдаёт 0 байт».
+ *
+ * `app.inject()` этот класс ошибок не ловит: он не создаёт настоящих сокетов, поэтому
+ * подписка на `close` у `request.raw` там не срабатывала. Нужен реальный listen и реальный
+ * HTTP-клиент.
+ */
+describe('POST /api/plan по реальному сокету', () => {
+  it('отдаёт непустой NDJSON-поток, а не пустое тело', async () => {
+    const address = await app.listen({ port: 0, host: '127.0.0.1' });
+
+    const response = await fetch(`${address}/api/plan`, {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify(demoRequest()),
+    });
+
+    expect(response.status).toBe(200);
+    const body = await response.text();
+    expect(body.length).toBeGreaterThan(0);
+
+    const events = parseStream(body);
+    expect(events.length).toBeGreaterThan(1);
+    expect(events[0]?.type).toBe('plan.started');
+    expect(events.at(-1)?.type).toBe('plan.ready');
+  });
+});

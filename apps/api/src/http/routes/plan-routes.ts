@@ -48,7 +48,10 @@ export async function registerPlanRoutes(
     const onClose = (): void => {
       clientGone = true;
     };
-    request.raw.on('close', onClose);
+    // Слушаем именно ответ: Node ≥16 эмитит `close` на IncomingMessage сразу после того,
+    // как тело запроса дочитано, поэтому подписка на `request.raw` обрывала бы поток до
+    // первой итерации. `close` на response означает настоящий разрыв соединения.
+    reply.raw.on('close', onClose);
 
     try {
       for await (const event of deps.orchestrator.createPlanStream(parsed.data)) {
@@ -68,7 +71,7 @@ export async function registerPlanRoutes(
         reply.raw.write(`${JSON.stringify(event)}\n`);
       }
     } finally {
-      request.raw.off('close', onClose);
+      reply.raw.off('close', onClose);
       reply.raw.end();
     }
 
