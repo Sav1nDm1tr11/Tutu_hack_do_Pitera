@@ -61,6 +61,21 @@ const SEARCH_INTENT = [
  * случайно связать категорию поиска с покупкой: «похоже на поиск отелей» не должно
  * когда-либо означать «создать заказ».
  */
+/**
+ * Единственное исключение из deny-list'а — по имени, а не по классу слов.
+ *
+ * `create_checkout_link` — чистый билдер URL: по описанию сервера «no network calls, no
+ * server-side cart, idempotent», аннотации tool'а — `readOnlyHint: true`,
+ * `destructiveHint: false`, `idempotentHint: true`. Он возвращает ссылку, которую
+ * открывает сам пользователь, и корзина создаётся в его браузере. Без него у самолётов и
+ * автобусов нет ссылки на оформление вовсе: `search_avia` и `search_bus` отдают только
+ * `search_results_url` и `checkout_ref`.
+ *
+ * Все остальные запретные намерения (book/order/pay/reserve/cancel) остаются запрещены:
+ * исключение сравнивается с полным именем tool'а, а не с подстрокой.
+ */
+export const CHECKOUT_LINK_TOOL = 'create_checkout_link';
+
 const FORBIDDEN_INTENT = [
   'book',
   'booking',
@@ -136,6 +151,11 @@ export interface ToolCatalog {
   readonly unmatched: readonly string[];
   /** Tool'ы, отклонённые deny-list'ом. Выводятся отдельно: это важный факт для ревью. */
   readonly forbidden: readonly string[];
+  /**
+   * Билдер ссылки на оформление, если сервер его отдал. Хранится отдельно от `bindings`:
+   * это не источник инвентаря, и сопоставляться с категориями поиска он не должен.
+   */
+  readonly checkoutLink: DiscoveredTool | undefined;
 }
 
 export function buildToolCatalog(tools: readonly DiscoveredTool[]): ToolCatalog {
@@ -143,9 +163,11 @@ export function buildToolCatalog(tools: readonly DiscoveredTool[]): ToolCatalog 
   const forbidden: string[] = [];
 
   const reference: DiscoveredTool[] = [];
+  let checkoutLink: DiscoveredTool | undefined;
 
   for (const tool of tools) {
-    if (matchesAny(tool.name, FORBIDDEN_INTENT)) forbidden.push(tool.name);
+    if (tool.name === CHECKOUT_LINK_TOOL) checkoutLink = tool;
+    else if (matchesAny(tool.name, FORBIDDEN_INTENT)) forbidden.push(tool.name);
     else if (isReferenceTool(tool.name)) reference.push(tool);
     else allowed.push(tool);
   }
@@ -198,6 +220,7 @@ export function buildToolCatalog(tools: readonly DiscoveredTool[]): ToolCatalog 
       .map((tool) => tool.name)
       .sort(),
     forbidden: forbidden.sort(),
+    checkoutLink,
   };
 }
 

@@ -175,10 +175,32 @@ export function mapTransportOffers(
   payload: unknown,
   direction: 'outbound' | 'inbound',
 ): readonly RawTransportOffer[] {
-  return extractRecords(payload).map((record, index) =>
-    mapTransportOffer(record, direction, index),
-  );
+  return mapTransportOffersWithRefs(payload, direction).map((entry) => entry.offer);
 }
+
+/**
+ * Вариант вместе с исходным `checkout_ref`.
+ *
+ * `checkout_ref` не проецируется в доменную модель: это непрозрачный набор идентификаторов
+ * конкретного продукта Туту, который целиком передаётся обратно в `create_checkout_link`.
+ * Домену он не нужен, адаптеру — нужен, поэтому и живёт рядом с raw-вариантом.
+ */
+export interface MappedTransportOffer {
+  readonly offer: RawTransportOffer;
+  readonly checkoutRef: Record<string, unknown> | undefined;
+}
+
+export function mapTransportOffersWithRefs(
+  payload: unknown,
+  direction: 'outbound' | 'inbound',
+): readonly MappedTransportOffer[] {
+  return extractRecords(payload).map((record, index) => ({
+    offer: mapTransportOffer(record, direction, index),
+    checkoutRef: pickRecord(record, CHECKOUT_REF),
+  }));
+}
+
+const CHECKOUT_REF = ['checkoutref'] as const;
 
 export function mapHotelOffers(
   payload: unknown,

@@ -11,7 +11,8 @@ import type {
 } from '@tutu-plan-b/domain';
 import { emptyInventoryResponse } from '@tutu-plan-b/domain';
 import { planHotelArguments, planTransportArguments } from './arguments';
-import { mapHotelOffers, mapTransportOffers } from './map-offers';
+import { mapHotelOffers, mapTransportOffersWithRefs } from './map-offers';
+import { pickString } from './fields';
 import {
   McpSession,
   McpUnavailableError,

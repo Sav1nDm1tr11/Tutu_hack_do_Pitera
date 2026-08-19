@@ -22,6 +22,18 @@ export interface TravelInventoryGateway {
 
   searchHotels(query: HotelQuery): Promise<InventoryResponse<RawHotelOffer>>;
 
+  /**
+   * Ссылки на оформление для конкретных вариантов.
+   *
+   * Необязательный метод: у fixtures ссылка приходит вместе с вариантом, а у live-MCP
+   * часть продуктов (авиа, автобусы) отдаёт её отдельным вызовом билдера URL. Вызывается
+   * уже после сборки конфигураций — только для показанных вариантов, а не для всего пула:
+   * каждая ссылка стоит вызова инвентаря.
+   *
+   * Возвращает ровно то, что вернул источник: URL непрозрачен и не пересобирается.
+   */
+  resolveCheckoutUrls?(optionIds: readonly string[]): Promise<ReadonlyMap<string, string>>;
+
   /** Закрытие сессии. Fixtures ничего не держат, live — MCP-транспорт. */
   close?(): Promise<void>;
 }
