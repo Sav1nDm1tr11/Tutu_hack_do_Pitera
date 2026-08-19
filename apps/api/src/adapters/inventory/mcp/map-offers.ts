@@ -101,6 +101,30 @@ const CHECKOUT_URL = [
   'tutuurl',
 ] as const;
 
+/**
+ * Словарь видов транспорта источника → доменный `TransportMode`.
+ *
+ * Tutu MCP отдаёт `railway`/`avia`/`etrain`, домен знает `train`/`flight`/`suburbanTrain`
+ * (`transportModeSchema`). Перевод — работа адаптера: доменный enum остаётся неизменным,
+ * а незнакомое значение сознательно проходит как есть, чтобы нормализатор честно отправил
+ * запись в карантин, а не получил подставленный вид транспорта.
+ */
+const SOURCE_MODES: Readonly<Record<string, string>> = {
+  railway: 'train',
+  rail: 'train',
+  train: 'train',
+  avia: 'flight',
+  flight: 'flight',
+  etrain: 'suburbanTrain',
+  suburbantrain: 'suburbanTrain',
+  bus: 'bus',
+};
+
+export function normalizeSourceMode(value: string | undefined): string | undefined {
+  if (value === undefined) return undefined;
+  return SOURCE_MODES[value.trim().toLowerCase()] ?? value;
+}
+
 export function mapTransportOffers(
   payload: unknown,
   direction: 'outbound' | 'inbound',
@@ -137,7 +161,10 @@ function mapTransportOffer(
   return {
     ...optional('id', pickString(record, ['id', 'offerid', 'uid', 'hash']) ?? `mcp:t:${index}`),
     direction,
-    ...optional('mode', pickString(record, ['mode', 'transport', 'type', 'kind', 'vehicle'])),
+    ...optional(
+      'mode',
+      normalizeSourceMode(pickString(record, ['mode', 'transport', 'type', 'kind', 'vehicle'])),
+    ),
     ...optional('operator', pickString(record, ['operator', 'carrier', 'company', 'airline', 'перевозчик'])),
     ...optional(
       'departurePlace',
@@ -174,7 +201,7 @@ function mapTransportOffer(
 function mapSegment(record: Record<string, unknown>, fallbackId: string): RawTransportSegment {
   return {
     ...optional('id', pickString(record, ['id', 'segmentid']) ?? fallbackId),
-    ...optional('mode', pickString(record, ['mode', 'transport', 'type'])),
+    ...optional('mode', normalizeSourceMode(pickString(record, ['mode', 'transport', 'type']))),
     ...optional('operator', pickString(record, ['operator', 'carrier'])),
     ...optional('departurePlace', mapPlace(pick(record, DEPARTURE_PLACE))),
     ...optional('departureAt', pickString(record, DEPARTURE_AT)),

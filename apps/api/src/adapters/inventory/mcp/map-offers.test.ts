@@ -86,3 +86,53 @@ describe('mapHotelOffers', () => {
     });
   });
 });
+
+describe('нормализация словаря видов транспорта', () => {
+  it('переводит транспорт источника в доменные значения', () => {
+    const offers = mapTransportOffers(
+      {
+        variants: [
+          { id: 'r1', transport: 'railway' },
+          { id: 'a1', transport: 'avia' },
+          { id: 'e1', transport: 'etrain' },
+          { id: 'b1', transport: 'bus' },
+          { id: 't1', transport: 'train' },
+          { id: 'f1', transport: 'flight' },
+        ],
+      },
+      'outbound',
+    );
+
+    expect(offers.map((offer) => offer.mode)).toEqual([
+      'train',
+      'flight',
+      'suburbanTrain',
+      'bus',
+      'train',
+      'flight',
+    ]);
+  });
+
+  it('оставляет незнакомый вид транспорта как есть — карантин должен отработать честно', () => {
+    const [offer] = mapTransportOffers({ variants: [{ id: 'x1', transport: 'ferry' }] }, 'outbound');
+
+    expect(offer?.mode).toBe('ferry');
+  });
+
+  it('переводит вид транспорта и внутри сегментов', () => {
+    const [offer] = mapTransportOffers(
+      {
+        variants: [
+          {
+            id: 'r2',
+            transport: 'railway',
+            segments: [{ transport: 'railway', from: 'Москва', to: 'Тверь' }],
+          },
+        ],
+      },
+      'outbound',
+    );
+
+    expect(offer?.segments?.[0]?.mode).toBe('train');
+  });
+});
